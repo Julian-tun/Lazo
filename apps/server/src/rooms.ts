@@ -1,11 +1,6 @@
 // Manejo de salas EN MEMORIA (se pierden al reiniciar el servidor).
 import { randomInt } from 'node:crypto';
-import {
-  MAX_PEOPLE_PER_ROOM,
-  ROOM_CODE_LENGTH,
-  type ChatMessage,
-  type Participant,
-} from '@lazo/shared';
+import { MAX_PEOPLE_PER_ROOM, ROOM_CODE_LENGTH, type ChatMessage, type Participant } from '@lazo/shared';
 
 export interface Room {
   code: string;

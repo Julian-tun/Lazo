@@ -1,4 +1,4 @@
-@import "tailwindcss";
+@import 'tailwindcss';
 
 /* Variante para "celular en horizontal": pantalla apaisada y poco alta.
    Uso: phone-land:hidden, phone-land:fixed, etc. */

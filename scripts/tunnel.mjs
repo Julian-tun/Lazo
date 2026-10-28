@@ -15,7 +15,9 @@ const installed = [
 ].find((p) => existsSync(p));
 const exe = installed ?? 'cloudflared';
 
-const child = spawn(exe, ['tunnel', '--no-autoupdate', '--url', TARGET], { stdio: ['ignore', 'pipe', 'pipe'] });
+const child = spawn(exe, ['tunnel', '--no-autoupdate', '--url', TARGET], {
+  stdio: ['ignore', 'pipe', 'pipe'],
+});
 
 let shown = false;
 const onOutput = (chunk) => {

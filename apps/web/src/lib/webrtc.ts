@@ -88,11 +88,12 @@ export function createPeerLink(
 // Estos valores son el MÁXIMO al que puede llegar cuando la red y la compu lo permiten.
 export type Quality = 'ahorro' | 'normal' | 'alta';
 
-export const QUALITY: Record<Quality, { label: string; width: number; height: number; maxBitrate: number }> = {
-  ahorro: { label: 'Ahorro (480p)', width: 854, height: 480, maxBitrate: 800_000 },
-  normal: { label: 'Normal (720p)', width: 1280, height: 720, maxBitrate: 2_500_000 },
-  alta: { label: 'Alta (1080p)', width: 1920, height: 1080, maxBitrate: 5_000_000 },
-};
+export const QUALITY: Record<Quality, { label: string; width: number; height: number; maxBitrate: number }> =
+  {
+    ahorro: { label: 'Ahorro (480p)', width: 854, height: 480, maxBitrate: 800_000 },
+    normal: { label: 'Normal (720p)', width: 1280, height: 720, maxBitrate: 2_500_000 },
+    alta: { label: 'Alta (1080p)', width: 1920, height: 1080, maxBitrate: 5_000_000 },
+  };
 
 /** Límites de captura para la pestaña compartida según la calidad elegida. */
 export function captureConstraints(q: Quality): MediaTrackConstraints {
@@ -115,7 +116,9 @@ export async function tuneVideoSender(pc: RTCPeerConnection, q: Quality): Promis
     params.encodings[0].maxBitrate = QUALITY[q].maxBitrate;
     params.encodings[0].maxFramerate = 30;
     params.degradationPreference = 'balanced';
-    await sender.setParameters(params).catch((err) => console.warn('[webrtc] no se pudo ajustar la calidad', err));
+    await sender
+      .setParameters(params)
+      .catch((err) => console.warn('[webrtc] no se pudo ajustar la calidad', err));
   }
 }
 
@@ -133,7 +136,9 @@ export async function refreshAdaptation(pc: RTCPeerConnection): Promise<void> {
     for (const mode of ['maintain-resolution', 'balanced'] as const) {
       const params = sender.getParameters();
       params.degradationPreference = mode;
-      await sender.setParameters(params).catch((err) => console.warn('[webrtc] no se pudo reiniciar la calidad', err));
+      await sender
+        .setParameters(params)
+        .catch((err) => console.warn('[webrtc] no se pudo reiniciar la calidad', err));
     }
   }
 }

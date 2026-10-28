@@ -44,6 +44,8 @@ Para detenerlo: `Ctrl + C` en la terminal.
 | `npm run dev`       | Servidor (puerto 3001) + web (puerto 5173) a la vez  |
 | `npm run typecheck` | Revisa los tipos de TypeScript en server y web       |
 | `npm run build`     | Genera la web de producción en `apps/web/dist`       |
+| `npm run lint`      | Revisa el código con ESLint (errores y malas prácticas) |
+| `npm run format`    | Acomoda el formato del código con Prettier           |
 
 ## Estructura
 

@@ -1,12 +1,23 @@
 // Dibujos del modo fiesta, hechos a mano en SVG (sin imágenes externas).
 
 /** Gatita kawaii blanca con moño rosa. Puede sostener un lápiz o un corazón. */
-export function Gatita({ con = 'corazon', className = '' }: { con?: 'lapiz' | 'corazon'; className?: string }) {
+export function Gatita({
+  con = 'corazon',
+  className = '',
+}: {
+  con?: 'lapiz' | 'corazon';
+  className?: string;
+}) {
   const linea = '#4a1d33';
   return (
     <svg viewBox="0 0 120 132" className={className} aria-hidden>
       {/* Vestidito */}
-      <path d="M36 94 Q60 84 84 94 L92 126 Q60 134 28 126 Z" fill="#f472b6" stroke={linea} strokeWidth="2.5" />
+      <path
+        d="M36 94 Q60 84 84 94 L92 126 Q60 134 28 126 Z"
+        fill="#f472b6"
+        stroke={linea}
+        strokeWidth="2.5"
+      />
       <circle cx="48" cy="108" r="2.5" fill="#fff" />
       <circle cx="60" cy="114" r="2.5" fill="#fff" />
       <circle cx="72" cy="108" r="2.5" fill="#fff" />
@@ -44,7 +55,17 @@ export function Gatita({ con = 'corazon', className = '' }: { con?: 'lapiz' | 'c
       {/* Lo que sostiene */}
       {con === 'lapiz' ? (
         <g className="fiesta-pencil">
-          <rect x="94" y="72" width="7" height="30" rx="2" fill="#fde047" stroke={linea} strokeWidth="2" transform="rotate(35 97 87)" />
+          <rect
+            x="94"
+            y="72"
+            width="7"
+            height="30"
+            rx="2"
+            fill="#fde047"
+            stroke={linea}
+            strokeWidth="2"
+            transform="rotate(35 97 87)"
+          />
           <path d="M104 106 l6 6 l-2 -9 z" fill={linea} transform="rotate(-10 106 108)" />
         </g>
       ) : (
@@ -72,13 +93,29 @@ export function Rosa({ className = '', delay = 0 }: { className?: string; delay?
       </g>
       {/* Contorno que se va dibujando */}
       <g fill="none" stroke="#be123c" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round">
-        <path className="fiesta-rose-line" style={d(0)} d="M34 42 C30 22 58 12 72 26 C84 40 72 60 50 60 C38 60 32 52 34 42 Z" />
-        <path className="fiesta-rose-line" style={d(0.6)} d="M50 44 C42 34 58 26 64 34 C70 42 58 50 50 46 C45 42 51 36 57 39" />
+        <path
+          className="fiesta-rose-line"
+          style={d(0)}
+          d="M34 42 C30 22 58 12 72 26 C84 40 72 60 50 60 C38 60 32 52 34 42 Z"
+        />
+        <path
+          className="fiesta-rose-line"
+          style={d(0.6)}
+          d="M50 44 C42 34 58 26 64 34 C70 42 58 50 50 46 C45 42 51 36 57 39"
+        />
       </g>
       <g fill="none" stroke="#15803d" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round">
         <path className="fiesta-rose-line" style={d(1.1)} d="M52 60 C50 82 55 102 50 126" />
-        <path className="fiesta-rose-line" style={d(1.6)} d="M51 88 C38 80 30 90 33 97 C42 98 48 94 51 88 Z" />
-        <path className="fiesta-rose-line" style={d(1.9)} d="M52 102 C64 93 73 101 70 108 C62 110 56 106 52 102 Z" />
+        <path
+          className="fiesta-rose-line"
+          style={d(1.6)}
+          d="M51 88 C38 80 30 90 33 97 C42 98 48 94 51 88 Z"
+        />
+        <path
+          className="fiesta-rose-line"
+          style={d(1.9)}
+          d="M52 102 C64 93 73 101 70 108 C62 110 56 106 52 102 Z"
+        />
       </g>
     </svg>
   );
@@ -95,7 +132,15 @@ export function CorazonEdad({ edad, className = '' }: { edad: number; className?
         strokeWidth="3"
       />
       <ellipse cx="34" cy="34" rx="10" ry="6" fill="#fff" opacity="0.5" transform="rotate(-30 34 34)" />
-      <text x="60" y="68" textAnchor="middle" fontFamily="Fredoka, sans-serif" fontWeight="700" fontSize="40" fill="#fff">
+      <text
+        x="60"
+        y="68"
+        textAnchor="middle"
+        fontFamily="Fredoka, sans-serif"
+        fontWeight="700"
+        fontSize="40"
+        fill="#fff"
+      >
         {edad}
       </text>
     </svg>

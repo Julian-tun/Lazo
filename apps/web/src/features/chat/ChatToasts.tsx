@@ -29,7 +29,9 @@ export function ChatToasts({ messages, meId, onOpen, className = '' }: Props) {
     if (others.length === 0) return;
     setToasts((t) => [...t, ...others].slice(-MAX_TOASTS));
     for (const m of others) {
-      timers.current.push(window.setTimeout(() => setToasts((t) => t.filter((x) => x.id !== m.id)), TOAST_MS));
+      timers.current.push(
+        window.setTimeout(() => setToasts((t) => t.filter((x) => x.id !== m.id)), TOAST_MS),
+      );
     }
   }, [messages, meId]);
 

@@ -143,7 +143,9 @@ export function GuestViewer({ meId, hostId, overlay }: Props) {
         <div className="absolute inset-0 grid place-items-center p-6 text-center">
           <div className="flex flex-col items-center gap-3 text-sm text-zinc-400">
             {status === 'waiting' &&
-              (hostId ? 'Esperando a que el anfitrión comparta su pestaña…' : 'El anfitrión no está en la sala')}
+              (hostId
+                ? 'Esperando a que el anfitrión comparta su pestaña…'
+                : 'El anfitrión no está en la sala')}
             {status === 'connecting' && 'Conectando video…'}
             {status === 'failed' && (
               <>

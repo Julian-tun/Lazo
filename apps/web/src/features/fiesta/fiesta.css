@@ -124,57 +124,126 @@ html.fiesta body {
 }
 
 @keyframes fiesta-fade-in {
-  from { opacity: 0; }
-  to { opacity: 1; }
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
 @keyframes fiesta-fall {
-  0% { transform: translate3d(0, 0, 0) rotate(0deg); }
-  25% { transform: translate3d(18px, 30vh, 0) rotate(90deg); }
-  50% { transform: translate3d(-14px, 60vh, 0) rotate(180deg); }
-  75% { transform: translate3d(16px, 90vh, 0) rotate(270deg); }
-  100% { transform: translate3d(0, 120vh, 0) rotate(360deg); }
+  0% {
+    transform: translate3d(0, 0, 0) rotate(0deg);
+  }
+  25% {
+    transform: translate3d(18px, 30vh, 0) rotate(90deg);
+  }
+  50% {
+    transform: translate3d(-14px, 60vh, 0) rotate(180deg);
+  }
+  75% {
+    transform: translate3d(16px, 90vh, 0) rotate(270deg);
+  }
+  100% {
+    transform: translate3d(0, 120vh, 0) rotate(360deg);
+  }
 }
 @keyframes fiesta-bounce {
-  0%, 100% { transform: translateY(0) rotate(0deg); }
-  30% { transform: translateY(-0.25em) rotate(-4deg); }
-  60% { transform: translateY(0.05em) rotate(3deg); }
+  0%,
+  100% {
+    transform: translateY(0) rotate(0deg);
+  }
+  30% {
+    transform: translateY(-0.25em) rotate(-4deg);
+  }
+  60% {
+    transform: translateY(0.05em) rotate(3deg);
+  }
 }
 @keyframes fiesta-beat {
-  0%, 100% { transform: scale(1); }
-  15% { transform: scale(1.12); }
-  30% { transform: scale(0.98); }
-  45% { transform: scale(1.08); }
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  15% {
+    transform: scale(1.12);
+  }
+  30% {
+    transform: scale(0.98);
+  }
+  45% {
+    transform: scale(1.08);
+  }
 }
 @keyframes fiesta-draw {
-  to { stroke-dashoffset: 0; }
+  to {
+    stroke-dashoffset: 0;
+  }
 }
 @keyframes fiesta-fill {
-  to { fill: #ec4899; stroke: #be185d; }
+  to {
+    fill: #ec4899;
+    stroke: #be185d;
+  }
 }
 @keyframes fiesta-appear {
-  to { opacity: 1; }
+  to {
+    opacity: 1;
+  }
 }
 @keyframes fiesta-scribble {
-  from { transform: rotate(-6deg) translate(-1px, 1px); }
-  to { transform: rotate(6deg) translate(1px, -1px); }
+  from {
+    transform: rotate(-6deg) translate(-1px, 1px);
+  }
+  to {
+    transform: rotate(6deg) translate(1px, -1px);
+  }
 }
 @keyframes fiesta-bob {
-  0%, 100% { transform: translateY(0) rotate(-2deg); }
-  50% { transform: translateY(-6px) rotate(2deg); }
+  0%,
+  100% {
+    transform: translateY(0) rotate(-2deg);
+  }
+  50% {
+    transform: translateY(-6px) rotate(2deg);
+  }
 }
 @keyframes fiesta-pop {
-  0% { opacity: 0; transform: translateY(6px) scale(0.4); }
-  20% { opacity: 1; transform: translateY(0) scale(1); }
-  70% { opacity: 1; }
-  100% { opacity: 0; transform: translateY(-22px) scale(0.8); }
+  0% {
+    opacity: 0;
+    transform: translateY(6px) scale(0.4);
+  }
+  20% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+  70% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-22px) scale(0.8);
+  }
 }
 @keyframes fiesta-twinkle {
-  0%, 100% { opacity: 0.25; transform: scale(0.8); }
-  50% { opacity: 1; transform: scale(1.15); }
+  0%,
+  100% {
+    opacity: 0.25;
+    transform: scale(0.8);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.15);
+  }
 }
 @keyframes fiesta-sway {
-  0%, 100% { transform: translateY(0) rotate(-8deg); }
-  50% { transform: translateY(-2px) rotate(8deg); }
+  0%,
+  100% {
+    transform: translateY(0) rotate(-8deg);
+  }
+  50% {
+    transform: translateY(-2px) rotate(8deg);
+  }
 }
 
 /* ---- Cintas de mensajes de amor que pasan de un lado a otro ----
@@ -209,20 +278,41 @@ html.fiesta body {
   animation: fiesta-frase 4.5s ease-out forwards;
 }
 @keyframes fiesta-frase {
-  0% { opacity: 0; transform: translate(-50%, 10px) scale(0.5); }
-  12% { opacity: 1; transform: translate(-50%, 0) scale(1.08); }
-  20% { transform: translate(-50%, -4px) scale(1); }
-  80% { opacity: 1; }
-  100% { opacity: 0; transform: translate(-50%, -60px) scale(0.95); }
+  0% {
+    opacity: 0;
+    transform: translate(-50%, 10px) scale(0.5);
+  }
+  12% {
+    opacity: 1;
+    transform: translate(-50%, 0) scale(1.08);
+  }
+  20% {
+    transform: translate(-50%, -4px) scale(1);
+  }
+  80% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -60px) scale(0.95);
+  }
 }
 
 @keyframes fiesta-marquee {
-  from { transform: translateX(0); }
-  to { transform: translateX(-50%); }
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
 }
 @keyframes fiesta-shimmer {
-  from { background-position: 100% 0; }
-  to { background-position: -150% 0; }
+  from {
+    background-position: 100% 0;
+  }
+  to {
+    background-position: -150% 0;
+  }
 }
 
 /* Si el teléfono pide menos movimiento (ahorro de batería o accesibilidad en Android),

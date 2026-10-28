@@ -39,12 +39,7 @@ export function ChatOverlay({ messages, meId, onSend, className = '' }: Props) {
 }
 
 /** Panel pequeño y transparente. La caja de texto va ARRIBA para que el teclado no la tape. */
-function QuickChat({
-  messages,
-  meId,
-  onSend,
-  onClose,
-}: Omit<Props, 'className'> & { onClose: () => void }) {
+function QuickChat({ messages, meId, onSend, onClose }: Omit<Props, 'className'> & { onClose: () => void }) {
   const [text, setText] = useState('');
   const [error, setError] = useState<string | null>(null);
   const listRef = useRef<HTMLDivElement>(null);
@@ -127,7 +122,10 @@ function QuickChat({
             enterKeyHint="send"
             onChange={(e) => setText(e.target.value)}
           />
-          <button title="Enviar" className="rounded-lg bg-violet-600 px-2.5 text-sm font-semibold hover:bg-violet-500">
+          <button
+            title="Enviar"
+            className="rounded-lg bg-violet-600 px-2.5 text-sm font-semibold hover:bg-violet-500"
+          >
             ➤
           </button>
         </form>

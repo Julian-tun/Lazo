@@ -40,7 +40,8 @@ export default function Room() {
 
   // Entraron con el link directo (o la sala se perdió): pedir nombre
   if (!room.me) {
-    if (room.autoJoining) return <p className="grid h-dvh place-items-center text-zinc-400">Entrando a la sala…</p>;
+    if (room.autoJoining)
+      return <p className="grid h-dvh place-items-center text-zinc-400">Entrando a la sala…</p>;
     return <JoinForm code={code} error={room.error} onJoin={room.join} />;
   }
 
@@ -63,7 +64,11 @@ export default function Room() {
     <>
       {fiesta.active && <FiestaGarland onReplay={fiesta.openIntro} />}
       {fiesta.showIntro && (
-        <FiestaOverlay needsTap={fiesta.needsTap} onPlayMusic={fiesta.playMusic} onClose={fiesta.closeIntro} />
+        <FiestaOverlay
+          needsTap={fiesta.needsTap}
+          onPlayMusic={fiesta.playMusic}
+          onClose={fiesta.closeIntro}
+        />
       )}
     </>
   );

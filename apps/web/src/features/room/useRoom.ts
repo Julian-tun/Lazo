@@ -12,9 +12,7 @@ export function useRoom(code: string, initial: JoinedData | null) {
   // Guardamos en refs lo que necesitan los listeners de socket sin re-registrarse.
   // El nombre viene de Home o, si recargaste la página, de la sesión de esta pestaña.
   const session = loadSession();
-  const nameRef = useRef<string | null>(
-    initial?.me.name ?? (session?.code === code ? session.name : null),
-  );
+  const nameRef = useRef<string | null>(initial?.me.name ?? (session?.code === code ? session.name : null));
   const meRef = useRef(me);
   meRef.current = me;
 

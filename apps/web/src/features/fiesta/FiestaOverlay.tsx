@@ -11,10 +11,26 @@ const COSITAS = ['💖', '💕', '🌸', '🌷', '🌹', '🎀', '✨', '🐱', 
 
 // Stickers de fiesta flotando alrededor (los "cel" también salen en el celular, en las esquinas)
 const STICKERS = [
-  { src: '/fiesta/cumpleanos.gif', pos: 'top-[6%] left-[3%] sm:left-[8%] phone-land:top-[13%] phone-land:left-[2%]', cel: true },
-  { src: '/fiesta/globos.gif', pos: 'top-[6%] right-[3%] sm:right-[8%] phone-land:top-[13%] phone-land:right-[2%]', cel: true },
-  { src: '/fiesta/rosquilla.png', pos: 'bottom-[6%] left-[3%] sm:bottom-[9%] sm:left-[10%] phone-land:bottom-[13%] phone-land:left-[2%]', cel: true },
-  { src: '/fiesta/papel-picado.gif', pos: 'bottom-[6%] right-[3%] sm:bottom-[9%] sm:right-[10%] phone-land:bottom-[13%] phone-land:right-[2%]', cel: true },
+  {
+    src: '/fiesta/cumpleanos.gif',
+    pos: 'top-[6%] left-[3%] sm:left-[8%] phone-land:top-[13%] phone-land:left-[2%]',
+    cel: true,
+  },
+  {
+    src: '/fiesta/globos.gif',
+    pos: 'top-[6%] right-[3%] sm:right-[8%] phone-land:top-[13%] phone-land:right-[2%]',
+    cel: true,
+  },
+  {
+    src: '/fiesta/rosquilla.png',
+    pos: 'bottom-[6%] left-[3%] sm:bottom-[9%] sm:left-[10%] phone-land:bottom-[13%] phone-land:left-[2%]',
+    cel: true,
+  },
+  {
+    src: '/fiesta/papel-picado.gif',
+    pos: 'bottom-[6%] right-[3%] sm:bottom-[9%] sm:right-[10%] phone-land:bottom-[13%] phone-land:right-[2%]',
+    cel: true,
+  },
   { src: '/fiesta/chica.gif', pos: 'top-[30%] left-[6%]', cel: false },
   { src: '/fiesta/cerdo.png', pos: 'top-[30%] right-[6%]', cel: false },
   { src: '/fiesta/fuegos-artificiales.gif', pos: 'top-[56%] left-[13%]', cel: false },
@@ -147,7 +163,12 @@ export function FiestaOverlay({ needsTap, onPlayMusic, onClose }: Props) {
           <span
             key={i}
             className={`fiesta-fall ${c.soloVertical ? 'phone-land:hidden' : ''}`}
-            style={{ left: `${c.left}%`, fontSize: c.size, animationDuration: `${c.duration}s`, animationDelay: `${c.delay}s` }}
+            style={{
+              left: `${c.left}%`,
+              fontSize: c.size,
+              animationDuration: `${c.duration}s`,
+              animationDelay: `${c.delay}s`,
+            }}
           >
             {c.img ? (
               <img
@@ -186,7 +207,6 @@ export function FiestaOverlay({ needsTap, onPlayMusic, onClose }: Props) {
 
         {/* Frases lindas que van saliendo en burbujitas */}
         <FrasesQueSalen />
-
       </div>
 
       {/* Celular vertical / PC: todo en una columna.
@@ -196,8 +216,12 @@ export function FiestaOverlay({ needsTap, onPlayMusic, onClose }: Props) {
         <div className="flex flex-col items-center gap-2 phone-land:flex-1 phone-land:gap-1">
           <p className="text-xl tracking-[0.4em] phone-land:hidden">
             <span className="fiesta-twinkle inline-block">✨</span>
-            <span className="fiesta-twinkle inline-block" style={{ animationDelay: '0.4s' }}>💖</span>
-            <span className="fiesta-twinkle inline-block" style={{ animationDelay: '0.8s' }}>✨</span>
+            <span className="fiesta-twinkle inline-block" style={{ animationDelay: '0.4s' }}>
+              💖
+            </span>
+            <span className="fiesta-twinkle inline-block" style={{ animationDelay: '0.8s' }}>
+              ✨
+            </span>
           </p>
 
           <h1
@@ -209,7 +233,10 @@ export function FiestaOverlay({ needsTap, onPlayMusic, onClose }: Props) {
             <Rebote texto="CUMPLEAÑOS!" desde={6} />
           </h1>
 
-          <CorazonEdad edad={CUMPLE_EDAD} className="fiesta-beat h-[clamp(3.5rem,min(18vw,9vh),7rem)] w-auto drop-shadow-lg phone-land:h-14" />
+          <CorazonEdad
+            edad={CUMPLE_EDAD}
+            className="fiesta-beat h-[clamp(3.5rem,min(18vw,9vh),7rem)] w-auto drop-shadow-lg phone-land:h-14"
+          />
 
           {/* El nombre que se escribe solo, con corazoncitos alrededor */}
           <div className="relative w-full max-w-[min(24rem,40vh)] phone-land:max-w-[19rem]">
@@ -230,7 +257,10 @@ export function FiestaOverlay({ needsTap, onPlayMusic, onClose }: Props) {
           </div>
 
           {/* JULIAN & FIAMMA FOREVER, con brillito y corazones que laten */}
-          <p className="flex items-center gap-2 font-bold tracking-wide" style={{ fontSize: 'clamp(0.95rem, min(4.6vw, 5vh), 1.7rem)' }}>
+          <p
+            className="flex items-center gap-2 font-bold tracking-wide"
+            style={{ fontSize: 'clamp(0.95rem, min(4.6vw, 5vh), 1.7rem)' }}
+          >
             <span className="fiesta-beat inline-block">💞</span>
             <span className="fiesta-shimmer">
               {NOVIO_NOMBRE.toUpperCase()} &amp; {CUMPLE_NOMBRE.toUpperCase()} FOREVER ∞
@@ -243,11 +273,17 @@ export function FiestaOverlay({ needsTap, onPlayMusic, onClose }: Props) {
         <div className="flex flex-col items-center gap-2 phone-land:flex-1 phone-land:gap-1">
           {/* Gatitas: una dibuja una rosa, la otra trae un corazón */}
           <div className="flex items-end justify-center gap-1">
-            <Gatita con="lapiz" className="fiesta-cat h-[clamp(4.5rem,min(24vw,12vh),8.5rem)] w-auto phone-land:h-20" />
+            <Gatita
+              con="lapiz"
+              className="fiesta-cat h-[clamp(4.5rem,min(24vw,12vh),8.5rem)] w-auto phone-land:h-20"
+            />
             <Rosa className="h-[clamp(4rem,min(22vw,11vh),8rem)] w-auto phone-land:h-[4.5rem]" delay={0.5} />
             <Rosa className="h-[clamp(3rem,min(17vw,8.5vh),6.5rem)] w-auto phone-land:h-14" delay={2.2} />
             {/* la segunda gatita se balancea a otro ritmo */}
-            <Gatita con="corazon" className="fiesta-cat h-[clamp(4.5rem,min(24vw,12vh),8.5rem)] w-auto [animation-delay:-1.1s] phone-land:h-20" />
+            <Gatita
+              con="corazon"
+              className="fiesta-cat h-[clamp(4.5rem,min(24vw,12vh),8.5rem)] w-auto [animation-delay:-1.1s] phone-land:h-20"
+            />
           </div>
 
           {/* Fotitos de gatitos de cumpleaños, tipo polaroid */}

@@ -61,7 +61,12 @@ export function HostPanel({ guests, fiesta, onFiesta }: Props) {
   const qualityRef = useRef(quality);
   qualityRef.current = quality;
   // Calidad real que recibe cada espectador ahora mismo
-  const [sendInfo, setSendInfo] = useState<Record<string, { height: number | null; fps: number | null; kbps: number | null; limitedBy: SendStats['limitedBy'] }>>({});
+  const [sendInfo, setSendInfo] = useState<
+    Record<
+      string,
+      { height: number | null; fps: number | null; kbps: number | null; limitedBy: SendStats['limitedBy'] }
+    >
+  >({});
   // Último conteo de bytes enviados, para calcular la velocidad (kbps)
   const lastBytesRef = useRef(new Map<string, { bytes: number; at: number }>());
   // Última vez que el "guardián" reinició la calidad de cada espectador
@@ -136,11 +141,27 @@ export function HostPanel({ guests, fiesta, onFiesta }: Props) {
 
   // Mensajes de los espectadores: respuesta, candidatos ICE y "pedir video"
   useEffect(() => {
-    const onAnswer = ({ fromId, callId, sdp }: { fromId: string; callId: string; sdp: RTCSessionDescriptionInit }) => {
+    const onAnswer = ({
+      fromId,
+      callId,
+      sdp,
+    }: {
+      fromId: string;
+      callId: string;
+      sdp: RTCSessionDescriptionInit;
+    }) => {
       const link = linksRef.current.get(fromId);
       if (link?.callId === callId) link.setRemote(sdp).catch((e) => console.error('[host] answer', e));
     };
-    const onIce = ({ fromId, callId, candidate }: { fromId: string; callId: string; candidate: RTCIceCandidateInit }) => {
+    const onIce = ({
+      fromId,
+      callId,
+      candidate,
+    }: {
+      fromId: string;
+      callId: string;
+      candidate: RTCIceCandidateInit;
+    }) => {
       const link = linksRef.current.get(fromId);
       if (link?.callId === callId) void link.addIce(candidate);
     };
@@ -188,7 +209,10 @@ export function HostPanel({ guests, fiesta, onFiesta }: Props) {
         if (!s) continue;
         // Velocidad = bytes enviados desde la última vez / tiempo transcurrido
         const last = lastBytesRef.current.get(id);
-        const kbps = last && s.timestamp > last.at ? Math.round(((s.bytesSent - last.bytes) * 8) / (s.timestamp - last.at)) : null;
+        const kbps =
+          last && s.timestamp > last.at
+            ? Math.round(((s.bytesSent - last.bytes) * 8) / (s.timestamp - last.at))
+            : null;
         lastBytesRef.current.set(id, { bytes: s.bytesSent, at: s.timestamp });
         nextInfo[id] = { height: s.height, fps: s.fps, kbps, limitedBy: s.limitedBy };
 
@@ -218,7 +242,8 @@ export function HostPanel({ guests, fiesta, onFiesta }: Props) {
   async function changeQuality(q: Quality) {
     setQuality(q);
     const video = streamRef.current?.getVideoTracks()[0];
-    if (video) await video.applyConstraints(captureConstraints(q)).catch((e) => console.warn('[host] calidad', e));
+    if (video)
+      await video.applyConstraints(captureConstraints(q)).catch((e) => console.warn('[host] calidad', e));
     for (const link of linksRef.current.values()) await tuneVideoSender(link.pc, q);
   }
 
@@ -245,7 +270,8 @@ export function HostPanel({ guests, fiesta, onFiesta }: Props) {
   }
 
   async function startShare() {
-    if (!canShare) return setMessage('Este navegador no permite compartir pestañas. Usa Chrome o Edge en PC.');
+    if (!canShare)
+      return setMessage('Este navegador no permite compartir pestañas. Usa Chrome o Edge en PC.');
     setMessage(null);
     try {
       // Opciones nuevas (selfBrowserSurface, etc.) aún no están en los tipos de TS
@@ -269,7 +295,9 @@ export function HostPanel({ guests, fiesta, onFiesta }: Props) {
       setStream(s);
     } catch (err) {
       const name = (err as DOMException)?.name;
-      setMessage(name === 'NotAllowedError' ? 'Cancelaste la selección de pestaña' : 'No se pudo compartir la pestaña');
+      setMessage(
+        name === 'NotAllowedError' ? 'Cancelaste la selección de pestaña' : 'No se pudo compartir la pestaña',
+      );
     }
   }
 
@@ -279,7 +307,8 @@ export function HostPanel({ guests, fiesta, onFiesta }: Props) {
     <div className="flex flex-col gap-4 p-4">
       {!canShare && (
         <p className="rounded-lg bg-amber-950/60 px-3 py-2 text-sm text-amber-200">
-          Para compartir necesitas Chrome o Edge en una computadora. En el celular solo se puede ver como invitado.
+          Para compartir necesitas Chrome o Edge en una computadora. En el celular solo se puede ver como
+          invitado.
         </p>
       )}
 
@@ -318,7 +347,9 @@ export function HostPanel({ guests, fiesta, onFiesta }: Props) {
             </button>
           )}
           <span className="flex items-center gap-1.5 text-sm">
-            <span className={`size-2.5 rounded-full ${sharing ? 'animate-pulse bg-red-500' : 'bg-zinc-600'}`} />
+            <span
+              className={`size-2.5 rounded-full ${sharing ? 'animate-pulse bg-red-500' : 'bg-zinc-600'}`}
+            />
             {sharing ? 'Compartiendo' : 'Detenido'}
           </span>
           {/* Calidad máxima: cada espectador recibe lo mejor que permita SU conexión, hasta este tope */}
@@ -350,7 +381,11 @@ export function HostPanel({ guests, fiesta, onFiesta }: Props) {
                 return (
                   <li key={g.id}>
                     {g.name}:{' '}
-                    <span className={state === 'connected' ? 'text-emerald-400' : state === 'failed' ? 'text-red-300' : ''}>
+                    <span
+                      className={
+                        state === 'connected' ? 'text-emerald-400' : state === 'failed' ? 'text-red-300' : ''
+                      }
+                    >
                       {state ? PEER_LABEL[state] : 'esperando…'}
                     </span>
                     {route && (
@@ -366,8 +401,12 @@ export function HostPanel({ guests, fiesta, onFiesta }: Props) {
                         {info.kbps !== null ? ` ${(info.kbps / 1000).toFixed(1)} Mbps` : ''}
                       </span>
                     )}
-                    {info?.limitedBy === 'cpu' && <span className="text-amber-300"> · ⚠ limitado por tu compu</span>}
-                    {info?.limitedBy === 'bandwidth' && <span className="text-amber-300"> · ⚠ limitado por la red</span>}
+                    {info?.limitedBy === 'cpu' && (
+                      <span className="text-amber-300"> · ⚠ limitado por tu compu</span>
+                    )}
+                    {info?.limitedBy === 'bandwidth' && (
+                      <span className="text-amber-300"> · ⚠ limitado por la red</span>
+                    )}
                   </li>
                 );
               })}
@@ -382,12 +421,16 @@ export function HostPanel({ guests, fiesta, onFiesta }: Props) {
               if (err) setMessage(err);
             }}
             className={`rounded-full px-4 py-1.5 text-sm font-bold transition ${
-              fiesta ? 'bg-pink-500 text-white hover:bg-pink-600' : 'bg-zinc-800 text-zinc-300 hover:bg-zinc-700'
+              fiesta
+                ? 'bg-pink-500 text-white hover:bg-pink-600'
+                : 'bg-zinc-800 text-zinc-300 hover:bg-zinc-700'
             }`}
           >
             {fiesta ? '🎉 Modo fiesta: activado' : '🎂 Activar modo fiesta'}
           </button>
-          {fiesta && <span className="text-xs text-zinc-400">Todos lo ven 💖 (pulsa otra vez para quitarlo)</span>}
+          {fiesta && (
+            <span className="text-xs text-zinc-400">Todos lo ven 💖 (pulsa otra vez para quitarlo)</span>
+          )}
         </div>
 
         {/* ¿Hay respaldo TURN por si la conexión directa falla? */}
@@ -413,7 +456,13 @@ export function HostPanel({ guests, fiesta, onFiesta }: Props) {
       {/* Vista previa local (silenciada para no oír eco) */}
       <div className="overflow-hidden rounded-xl border border-zinc-800 bg-black">
         <div className="relative aspect-video">
-          <video ref={previewRef} autoPlay playsInline muted className="absolute inset-0 size-full object-contain" />
+          <video
+            ref={previewRef}
+            autoPlay
+            playsInline
+            muted
+            className="absolute inset-0 size-full object-contain"
+          />
           {!sharing && (
             <p className="absolute inset-0 grid place-items-center p-4 text-center text-sm text-zinc-500">
               Aquí verás una vista previa de lo que compartes

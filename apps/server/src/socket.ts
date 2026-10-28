@@ -74,7 +74,8 @@ export function registerSocketHandlers(io: IO) {
     };
 
     /** Id del anfitrión de mi sala (o null si no hay). */
-    const hostId = () => (currentRoom ? listParticipants(currentRoom).find((p) => p.role === 'host')?.id : undefined);
+    const hostId = () =>
+      currentRoom ? listParticipants(currentRoom).find((p) => p.role === 'host')?.id : undefined;
 
     /** ¿Ese id es un invitado de MI sala? (para no reenviar a cualquiera) */
     const isGuestInMyRoom = (id: unknown): id is string =>
