@@ -55,22 +55,28 @@ Lazo/  (carpeta E:\DuoProject)
 │  │  └─ src/
 │  │     ├─ index.ts         arranque del servidor HTTP y Socket.IO
 │  │     ├─ rooms.ts         salas en memoria (Map), máx. 4 personas
-│  │     └─ socket.ts        eventos: salas, chat, señalización WebRTC
+│  │     ├─ socket.ts        eventos: salas, chat, señalización WebRTC
+│  │     └─ turn.ts          credenciales temporales del TURN de Cloudflare
 │  └─ web/                   Vite + React + TypeScript + Tailwind CSS v4
 │     ├─ vite.config.ts      HTTPS local, --host, proxy de /socket.io
+│     ├─ public/             archivos estáticos: iconos, manifest, fiesta/ (imágenes y sonido)
 │     └─ src/
 │        ├─ pages/           Home.tsx (crear/unirse), Room.tsx (la sala)
 │        ├─ features/
-│        │  ├─ chat/         ChatPanel
+│        │  ├─ chat/         ChatPanel, ChatOverlay, ChatToasts
+│        │  ├─ fiesta/       modo fiesta (animaciones y música)
 │        │  ├─ room/         useRoom (estado de sala), RoomHeader
 │        │  ├─ share/        HostPanel (anfitrión: abrir link + compartir pestaña)
 │        │  └─ viewer/       GuestViewer (invitado: ver el stream)
 │        ├─ lib/
 │        │  ├─ socket.ts     conexión única de Socket.IO + estado de conexión
-│        │  └─ webrtc.ts     RTCPeerConnection, STUN y lugar para TURN
+│        │  └─ webrtc.ts     RTCPeerConnection, STUN y TURN
 │        ├─ App.tsx, main.tsx, index.css
 ├─ packages/shared/          tipos de eventos y límites compartidos (server + web)
-└─ docs/pruebas.md           checklist de pruebas manuales
+├─ scripts/tunnel.mjs        túnel para compartir la app fuera de tu Wi-Fi (npm run share)
+└─ docs/
+   ├─ pruebas.md             checklist de pruebas manuales
+   └─ soluciones-video.md    diagnóstico y plan para mejorar la calidad del video
 ```
 
 ## Cómo funciona (resumen)

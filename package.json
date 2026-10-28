@@ -2,7 +2,7 @@
   "name": "lazo",
   "private": true,
   "version": "0.1.0",
-  "description": "App web privada para que 2 personas vean juntas una página (pestaña compartida por WebRTC).",
+  "description": "Lazo: mira una página web en vivo con hasta 3 personas más (pestaña compartida por WebRTC, con chat).",
   "workspaces": [
     "packages/*",
     "apps/*"
