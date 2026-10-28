@@ -3,7 +3,7 @@
 App web privada para ver juntos una página web: **hasta 4 personas** (1 comparte desde la PC y hasta 3 espectadores, normalmente desde el celular).
 
 - El **anfitrión** crea una sala, abre un link en otra pestaña y comparte **solo esa pestaña** (con su audio).
-- Los **espectadores** (hasta 3) entran con el código de sala y ve la transmisión en vivo, con chat, desde el celular o la PC.
+- Los **espectadores** (hasta 3) entran con el código de sala y ven la transmisión en vivo, con chat, desde el celular o la PC.
 - El video va **P2P por WebRTC** (directo entre los dos navegadores). El servidor solo maneja salas, chat y señalización.
 - No se descarga ni se procesa el contenido de la página: solo se transmite la pestaña que el anfitrión elige.
 
@@ -192,3 +192,8 @@ En el panel del anfitrión verás `Respaldo TURN: listo ✓` y, por cada especta
    Document Picture-in-Picture (Chrome) con el chat, o una extensión del navegador.
 4. Reconexión más tolerante (mantener la sala unos segundos si el anfitrión se desconecta).
 5. Control de calidad (resolución/fps) y estadísticas de conexión.
+
+## Licencia
+
+© 2026 Julian-tun. **Todos los derechos reservados.** El código es público solo como muestra de trabajo;
+no se permite copiarlo, modificarlo ni usarlo sin permiso por escrito. Ver [LICENSE](LICENSE).

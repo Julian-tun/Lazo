@@ -1,6 +1,7 @@
 {
   "name": "lazo",
   "private": true,
+  "license": "UNLICENSED",
   "version": "0.1.0",
   "description": "Lazo: mira una página web en vivo con hasta 3 personas más (pestaña compartida por WebRTC, con chat).",
   "workspaces": [
