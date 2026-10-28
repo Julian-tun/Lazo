@@ -31,6 +31,7 @@ export interface PresencePayload {
 
 // Respuesta genérica de los "acks" (callbacks) de Socket.IO
 export type Ack<T = undefined> =
+  // eslint-disable-next-line @typescript-eslint/no-empty-object-type -- {} = "no agrega nada" (sin data)
   | ({ ok: true } & (T extends undefined ? {} : { data: T }))
   | { ok: false; error: string };
 

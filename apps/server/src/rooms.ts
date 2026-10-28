@@ -22,7 +22,7 @@ const MAX_HISTORY = 50;
 
 // Genera un código aleatorio con crypto (más seguro que Math.random)
 function newCode(): string {
-  let code = '';
+  let code: string;
   do {
     code = '';
     for (let i = 0; i < ROOM_CODE_LENGTH; i++) code += ALPHABET[randomInt(ALPHABET.length)];

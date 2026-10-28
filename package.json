@@ -12,9 +12,20 @@
     "dev": "concurrently -k -n server,web -c cyan,magenta \"npm run dev -w @lazo/server\" \"npm run dev -w @lazo/web\"",
     "build": "npm run build -w @lazo/web",
     "share": "npm run build && concurrently -k -n app,tunel -c green,yellow \"npm run start:web -w @lazo/server\" \"node scripts/tunnel.mjs\"",
-    "typecheck": "npm run typecheck -w @lazo/server && npm run typecheck -w @lazo/web"
+    "typecheck": "npm run typecheck -w @lazo/server && npm run typecheck -w @lazo/web",
+    "lint": "eslint .",
+    "format": "prettier --write .",
+    "format:check": "prettier --check ."
   },
   "devDependencies": {
-    "concurrently": "^10.0.6"
+    "@eslint/js": "^10.0.1",
+    "concurrently": "^10.0.6",
+    "eslint": "^10.13.0",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-react-hooks": "^7.1.1",
+    "eslint-plugin-react-refresh": "^0.5.7",
+    "globals": "^17.13.0",
+    "prettier": "^3.9.10",
+    "typescript-eslint": "^8.72.1"
   }
 }
