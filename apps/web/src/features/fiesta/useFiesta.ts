@@ -1,6 +1,6 @@
 // Hook del modo fiesta: tema rosita, animación de bienvenida y música.
 import { useCallback, useEffect, useRef, useState } from 'react';
-import type { ChatMessage, Participant } from '@duo/shared';
+import type { ChatMessage, Participant } from '@lazo/shared';
 import { isFiestaActive, MUSICA_URL } from './fiesta';
 
 export function useFiesta(messages: ChatMessage[], participants: Participant[]) {

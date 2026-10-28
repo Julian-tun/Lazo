@@ -20,8 +20,8 @@ Anfitrión: **Chrome**. Invitado: **Edge** (o una ventana de incógnito de Chrom
 - [ ] Abrir <https://localhost:5173> en Chrome y aceptar la advertencia del certificado.
 - [ ] Escribir un nombre y pulsar **Crear sala**. Aparece un código de 8 caracteres arriba.
 - [ ] Pegar un link (p. ej. un video de YouTube) y pulsar **Abrir en pestaña nueva**. Se abre en otra pestaña.
-- [ ] Volver a DuoProject y pulsar **Compartir pestaña**:
-  - [ ] El selector ofrece pestañas y **no** muestra la propia pestaña de DuoProject.
+- [ ] Volver a Lazo y pulsar **Compartir pestaña**:
+  - [ ] El selector ofrece pestañas y **no** muestra la propia pestaña de Lazo.
   - [ ] Elegir la pestaña del video y dejar marcado **"Compartir audio de la pestaña"**.
   - [ ] Aparece "● Compartiendo", la vista previa y el botón **Dejar de compartir**.
 - [ ] En Edge: abrir <https://localhost:5173>, poner otro nombre y el código, y pulsar **Unirse**.

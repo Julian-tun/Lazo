@@ -10,7 +10,7 @@ const SERVER_URL = 'http://localhost:3001';
 /** Muestra en consola la(s) IP(s) locales para abrir la app desde el celular. */
 function showLanUrl(): Plugin {
   return {
-    name: 'duo-lan-url',
+    name: 'lazo-lan-url',
     configureServer(server) {
       server.httpServer?.once('listening', () => {
         // Lista [nombre del adaptador, IP], con el Wi-Fi primero

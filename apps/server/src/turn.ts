@@ -6,7 +6,7 @@
 //
 // La clave de Cloudflare se queda en el servidor. A los navegadores solo les damos
 // credenciales TEMPORALES generadas con esa clave.
-import type { IceConfig } from '@duo/shared';
+import type { IceConfig } from '@lazo/shared';
 
 const STUN: RTCIceServer = { urls: 'stun:stun.l.google.com:19302' };
 const TTL_SECONDS = 24 * 60 * 60; // las credenciales duran 24 h

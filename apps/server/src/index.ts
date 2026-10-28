@@ -10,7 +10,7 @@ import { createServer, type IncomingMessage } from 'node:http';
 import { fileURLToPath } from 'node:url';
 import express from 'express';
 import { Server } from 'socket.io';
-import type { ClientToServerEvents, ServerToClientEvents } from '@duo/shared';
+import type { ClientToServerEvents, ServerToClientEvents } from '@lazo/shared';
 import { registerSocketHandlers } from './socket.js';
 import { roomCount } from './rooms.js';
 import { turnConfigured } from './turn.js';

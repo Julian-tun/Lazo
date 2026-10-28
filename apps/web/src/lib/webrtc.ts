@@ -1,7 +1,7 @@
 // Utilidades WebRTC: conexiones P2P entre el anfitrión y cada espectador.
 // El video/audio va directo entre los navegadores; el servidor solo pasa
 // los mensajes de "señalización" (offer / answer / ice).
-import type { IceConfig } from '@duo/shared';
+import type { IceConfig } from '@lazo/shared';
 import { ACK_TIMEOUT_MS, socket } from './socket';
 
 // Si no se puede pedir la configuración al servidor: solo STUN (conexión directa)

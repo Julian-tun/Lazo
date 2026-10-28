@@ -1,6 +1,6 @@
 // Modo fiesta 🎂: solo diseño. Se activa con un mensaje especial del anfitrión en el chat
 // (así llega en vivo a todos y también a quien entre después, sin tocar el servidor).
-import type { ChatMessage } from '@duo/shared';
+import type { ChatMessage } from '@lazo/shared';
 
 // Datos del cumpleaños
 export const CUMPLE_NOMBRE = 'Fiamma';

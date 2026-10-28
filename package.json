@@ -1,5 +1,5 @@
 {
-  "name": "duoproject",
+  "name": "lazo",
   "private": true,
   "version": "0.1.0",
   "description": "App web privada para que 2 personas vean juntas una página (pestaña compartida por WebRTC).",
@@ -8,10 +8,10 @@
     "apps/*"
   ],
   "scripts": {
-    "dev": "concurrently -k -n server,web -c cyan,magenta \"npm run dev -w @duo/server\" \"npm run dev -w @duo/web\"",
-    "build": "npm run build -w @duo/web",
-    "share": "npm run build && concurrently -k -n app,tunel -c green,yellow \"npm run start:web -w @duo/server\" \"node scripts/tunnel.mjs\"",
-    "typecheck": "npm run typecheck -w @duo/server && npm run typecheck -w @duo/web"
+    "dev": "concurrently -k -n server,web -c cyan,magenta \"npm run dev -w @lazo/server\" \"npm run dev -w @lazo/web\"",
+    "build": "npm run build -w @lazo/web",
+    "share": "npm run build && concurrently -k -n app,tunel -c green,yellow \"npm run start:web -w @lazo/server\" \"node scripts/tunnel.mjs\"",
+    "typecheck": "npm run typecheck -w @lazo/server && npm run typecheck -w @lazo/web"
   },
   "devDependencies": {
     "concurrently": "^10.0.6"

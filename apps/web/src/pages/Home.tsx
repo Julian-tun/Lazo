@@ -1,7 +1,7 @@
 // Pantalla inicial: poner nombre y crear o unirse a una sala.
 import { useEffect, useState, type FormEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { MAX_NAME_LENGTH, ROOM_CODE_LENGTH } from '@duo/shared';
+import { MAX_NAME_LENGTH, ROOM_CODE_LENGTH } from '@lazo/shared';
 import { ACK_TIMEOUT_MS, clearSession, loadName, saveName, saveSession, socket } from '../lib/socket';
 
 export default function Home() {
@@ -61,7 +61,7 @@ export default function Home() {
     <main className="mx-auto flex min-h-full max-w-md flex-col justify-center gap-8 px-4 py-10">
       <header className="text-center">
         <h1 className="text-3xl font-bold tracking-tight">
-          Duo<span className="text-violet-400">Project</span>
+          La<span className="text-violet-400">zo</span>
         </h1>
         <p className="mt-2 text-sm text-zinc-400">Mira una página con alguien más, en vivo.</p>
       </header>

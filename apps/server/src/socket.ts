@@ -9,7 +9,7 @@ import {
   type JoinedData,
   type Participant,
   type ServerToClientEvents,
-} from '@duo/shared';
+} from '@lazo/shared';
 import {
   addMessage,
   addParticipant,

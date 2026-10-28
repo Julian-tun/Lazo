@@ -1,6 +1,6 @@
 // Barra superior: código de sala, estado de conexión, quién está y botón salir.
 import { useState } from 'react';
-import type { Participant } from '@duo/shared';
+import type { Participant } from '@lazo/shared';
 import type { ConnectionState } from '../../lib/socket';
 
 interface Props {

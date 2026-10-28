@@ -2,7 +2,7 @@
 // - Cerrado: avisos de mensajes nuevos + botón 💬.
 // - Abierto: mini chat transparente a la izquierda para responder sin girar el teléfono.
 import { useEffect, useRef, useState, type FormEvent } from 'react';
-import { MAX_MESSAGE_LENGTH, type ChatMessage } from '@duo/shared';
+import { MAX_MESSAGE_LENGTH, type ChatMessage } from '@lazo/shared';
 import { ChatToasts } from './ChatToasts';
 
 interface Props {

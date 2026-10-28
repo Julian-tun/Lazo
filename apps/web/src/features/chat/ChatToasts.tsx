@@ -1,7 +1,7 @@
 // Avisos flotantes de mensajes nuevos, para verlos encima del video
 // (pantalla completa o celular en horizontal con el chat cerrado).
 import { useEffect, useRef, useState } from 'react';
-import type { ChatMessage } from '@duo/shared';
+import type { ChatMessage } from '@lazo/shared';
 
 interface Props {
   messages: ChatMessage[];

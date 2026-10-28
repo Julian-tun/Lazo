@@ -1,6 +1,6 @@
 // Hook con el estado de la sala: quién soy, quién está y los mensajes.
 import { useCallback, useEffect, useRef, useState } from 'react';
-import type { ChatMessage, JoinedData, Participant } from '@duo/shared';
+import type { ChatMessage, JoinedData, Participant } from '@lazo/shared';
 import { ACK_TIMEOUT_MS, clearSession, loadSession, saveSession, socket } from '../../lib/socket';
 
 export function useRoom(code: string, initial: JoinedData | null) {

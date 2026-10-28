@@ -5,7 +5,7 @@ import {
   ROOM_CODE_LENGTH,
   type ChatMessage,
   type Participant,
-} from '@duo/shared';
+} from '@lazo/shared';
 
 export interface Room {
   code: string;

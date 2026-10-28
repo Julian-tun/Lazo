@@ -1,6 +1,6 @@
 // Panel del ANFITRIÓN: abrir un link en otra pestaña y compartir esa pestaña con audio.
 import { useCallback, useEffect, useRef, useState } from 'react';
-import type { Participant } from '@duo/shared';
+import type { Participant } from '@lazo/shared';
 import { socket } from '../../lib/socket';
 import {
   captureConstraints,
@@ -252,7 +252,7 @@ export function HostPanel({ guests, fiesta, onFiesta }: Props) {
       const options = {
         video: { displaySurface: 'browser', ...captureConstraints(quality) },
         audio: true,
-        selfBrowserSurface: 'exclude', // no ofrecer la pestaña de DuoProject
+        selfBrowserSurface: 'exclude', // no ofrecer la pestaña de Lazo
         preferCurrentTab: false,
         surfaceSwitching: 'include', // permite cambiar de pestaña sin volver a empezar
         systemAudio: 'exclude',

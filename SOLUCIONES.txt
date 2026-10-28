@@ -1,4 +1,4 @@
-SOLUCIONES PARA LA CALIDAD Y FLUIDEZ DEL VIDEO (DuoProject)
+SOLUCIONES PARA LA CALIDAD Y FLUIDEZ DEL VIDEO (Lazo)
 ==========================================================
 Fecha: 26/10/2026
 Estado: PENDIENTE. Solo se investigó; todavía NO se cambió nada del código.
@@ -31,7 +31,7 @@ Estado: PENDIENTE. Solo se investigó; todavía NO se cambió nada del código.
 3. SOSPECHOSOS (de más a menos probable)
 ----------------------------------------
 a) La pestaña de la película queda en segundo plano mientras el anfitrión mira
-   la pestaña de DuoProject, y Chrome le baja los fps y el tamaño a la captura.
+   la pestaña de Lazo, y Chrome le baja los fps y el tamaño a la captura.
 b) Ahorro de energía de Chrome (chrome://settings/performance) o de la laptop
    con batería / plan "Equilibrado".
 c) El reproductor de la página pone el video en baja resolución o en una "capa"

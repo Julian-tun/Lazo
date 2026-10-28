@@ -1,4 +1,4 @@
-# DuoProject
+# Lazo
 
 App web privada para ver juntos una página web: **hasta 4 personas** (1 comparte desde la PC y hasta 3 espectadores, normalmente desde el celular).
 
@@ -48,7 +48,7 @@ Para detenerlo: `Ctrl + C` en la terminal.
 ## Estructura
 
 ```
-DuoProject/
+Lazo/  (carpeta E:\DuoProject)
 ├─ package.json              workspaces y scripts generales
 ├─ apps/
 │  ├─ server/                Node + Express + Socket.IO (ejecutado con tsx)
@@ -105,7 +105,7 @@ Eventos y tipos: [packages/shared/src/index.ts](packages/shared/src/index.ts).
 - `typescript`, `@types/react`, `@types/react-dom`, `@types/node` (dev): tipos.
 
 **Compartido**
-- `@duo/shared`: paquete local (workspace) con los tipos de eventos; no se descarga de internet.
+- `@lazo/shared`: paquete local (workspace) con los tipos de eventos; no se descarga de internet.
 
 ## Compartir con alguien de otra red (túnel)
 

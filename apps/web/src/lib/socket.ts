@@ -1,7 +1,7 @@
 // Conexión única de Socket.IO para toda la app.
 import { useEffect, useState } from 'react';
 import { io, type Socket } from 'socket.io-client';
-import type { ClientToServerEvents, ServerToClientEvents } from '@duo/shared';
+import type { ClientToServerEvents, ServerToClientEvents } from '@lazo/shared';
 
 export type DuoSocket = Socket<ServerToClientEvents, ClientToServerEvents>;
 

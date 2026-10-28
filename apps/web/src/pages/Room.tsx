@@ -1,7 +1,7 @@
 // Pantalla de sala. Muestra un diseño distinto para anfitrión e invitado.
 import { useEffect, useState, type FormEvent } from 'react';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
-import { MAX_NAME_LENGTH, type JoinedData } from '@duo/shared';
+import { MAX_NAME_LENGTH, type JoinedData } from '@lazo/shared';
 import { ChatPanel } from '../features/chat/ChatPanel';
 import { ChatOverlay } from '../features/chat/ChatOverlay';
 import { FIESTA_OFF, FIESTA_ON } from '../features/fiesta/fiesta';
