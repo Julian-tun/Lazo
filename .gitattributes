@@ -1,0 +1,13 @@
+# Todos los archivos de texto se guardan con saltos de línea LF (estilo Linux/Mac),
+# igual que pide .editorconfig. Así no salen avisos de "LF will be replaced by CRLF".
+* text=auto eol=lf
+
+# Archivos binarios: git no debe tocarlos
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.mp3 binary
+*.woff binary
+*.woff2 binary
