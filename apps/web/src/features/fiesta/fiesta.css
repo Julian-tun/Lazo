@@ -1,0 +1,234 @@
+/* ============================================================
+   Modo fiesta 🎂 — solo se aplica cuando <html> tiene la clase "fiesta".
+   Sin esa clase, la app se ve exactamente igual que siempre.
+   ============================================================ */
+
+/* ---- Tema rosita kawaii: redefinimos la paleta que usa toda la app ----
+   La app usa "zinc" (fondos/textos) y "violet" (botones). Aquí los cambiamos a rosas,
+   del más claro (fondo) al más oscuro (texto). */
+html.fiesta {
+  color-scheme: light;
+  --color-zinc-950: #fff0f6; /* fondo de la página */
+  --color-zinc-900: #ffe3ef; /* cajas de texto */
+  --color-zinc-800: #fcc8dc; /* bordes, botones secundarios */
+  --color-zinc-700: #f8a9c8; /* hover */
+  --color-zinc-600: #e27aa6;
+  --color-zinc-500: #c65a8a; /* textos suaves */
+  --color-zinc-400: #a8406f;
+  --color-zinc-300: #8a2d5a;
+  --color-zinc-200: #6e1f47;
+  --color-zinc-100: #5a1739; /* texto principal */
+
+  --color-violet-300: #f9a8d4; /* nombres en avisos sobre el video (fondo oscuro) */
+  --color-violet-400: #ec4899;
+  --color-violet-500: #ec4899; /* hover de botones */
+  --color-violet-600: #db2777; /* botones principales */
+
+  /* Colores de estado: más oscuros para que se lean sobre fondo claro */
+  --color-emerald-400: #059669;
+  --color-sky-300: #0369a1;
+  --color-amber-300: #b45309;
+  --color-amber-200: #92400e;
+  --color-amber-950: #fef3c7;
+  --color-red-300: #be123c;
+  --color-red-950: #ffe4e6;
+}
+
+html.fiesta body {
+  font-family: 'Fredoka', ui-rounded, system-ui, sans-serif;
+  /* Corazoncitos muy suaves de fondo */
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='64' height='64'%3E%3Ctext x='8' y='24' font-size='14' opacity='.18'%3E%F0%9F%92%97%3C/text%3E%3Ctext x='38' y='56' font-size='12' opacity='.14'%3E%F0%9F%8C%B8%3C/text%3E%3C/svg%3E");
+}
+
+/* ---- Guirnalda de la barra superior ---- */
+.fiesta-garland > span {
+  animation: fiesta-sway 2.4s ease-in-out infinite;
+}
+
+/* ---- Animación de bienvenida ---- */
+.fiesta-overlay {
+  background:
+    radial-gradient(circle at 20% 15%, #ffffffaa 0 12%, transparent 30%),
+    radial-gradient(circle at 85% 80%, #ffffff88 0 10%, transparent 28%),
+    linear-gradient(160deg, #ffd6e8 0%, #ffb3d1 45%, #ffc8e1 100%);
+  animation: fiesta-fade-in 0.6s ease-out both;
+}
+
+/* Cositas que caen: corazones, flores, gatitos... */
+.fiesta-fall {
+  position: absolute;
+  top: -10vh;
+  animation-name: fiesta-fall;
+  animation-timing-function: linear;
+  animation-iteration-count: infinite;
+  pointer-events: none;
+  user-select: none;
+}
+
+/* Letras del título que rebotan una por una */
+.fiesta-letter {
+  display: inline-block;
+  animation: fiesta-bounce 1.6s ease-in-out infinite;
+}
+
+/* Corazón con el "19" que late */
+.fiesta-beat {
+  animation: fiesta-beat 1.1s ease-in-out infinite;
+}
+
+/* "Fiamma" que se escribe sola: primero el contorno, luego el relleno */
+.fiesta-write {
+  font-family: 'Pacifico', cursive;
+  fill: transparent;
+  stroke: #db2777;
+  stroke-width: 1.4;
+  stroke-dasharray: 900;
+  stroke-dashoffset: 900;
+  animation:
+    fiesta-draw 3.2s ease-in-out 0.8s forwards,
+    fiesta-fill 1s ease-out 3.6s forwards;
+}
+
+/* La rosa que dibuja la gatita */
+.fiesta-rose-line {
+  stroke-dasharray: 400;
+  stroke-dashoffset: 400;
+  animation: fiesta-draw 2.6s ease-in-out forwards;
+}
+.fiesta-rose-fill {
+  opacity: 0;
+  animation: fiesta-appear 0.8s ease-out forwards;
+}
+
+/* El lápiz de la gatita se mueve mientras dibuja */
+.fiesta-pencil {
+  transform-origin: 70% 90%;
+  animation: fiesta-scribble 0.35s ease-in-out infinite alternate;
+}
+
+/* Gatitas que se balancean */
+.fiesta-cat {
+  animation: fiesta-bob 2.2s ease-in-out infinite;
+  transform-origin: 50% 100%;
+}
+
+/* Corazoncitos que salen alrededor del nombre */
+.fiesta-pop {
+  opacity: 0;
+  animation: fiesta-pop 2.4s ease-out infinite;
+}
+
+/* Brillitos */
+.fiesta-twinkle {
+  animation: fiesta-twinkle 1.6s ease-in-out infinite;
+}
+
+@keyframes fiesta-fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes fiesta-fall {
+  0% { transform: translate3d(0, 0, 0) rotate(0deg); }
+  25% { transform: translate3d(18px, 30vh, 0) rotate(90deg); }
+  50% { transform: translate3d(-14px, 60vh, 0) rotate(180deg); }
+  75% { transform: translate3d(16px, 90vh, 0) rotate(270deg); }
+  100% { transform: translate3d(0, 120vh, 0) rotate(360deg); }
+}
+@keyframes fiesta-bounce {
+  0%, 100% { transform: translateY(0) rotate(0deg); }
+  30% { transform: translateY(-0.25em) rotate(-4deg); }
+  60% { transform: translateY(0.05em) rotate(3deg); }
+}
+@keyframes fiesta-beat {
+  0%, 100% { transform: scale(1); }
+  15% { transform: scale(1.12); }
+  30% { transform: scale(0.98); }
+  45% { transform: scale(1.08); }
+}
+@keyframes fiesta-draw {
+  to { stroke-dashoffset: 0; }
+}
+@keyframes fiesta-fill {
+  to { fill: #ec4899; stroke: #be185d; }
+}
+@keyframes fiesta-appear {
+  to { opacity: 1; }
+}
+@keyframes fiesta-scribble {
+  from { transform: rotate(-6deg) translate(-1px, 1px); }
+  to { transform: rotate(6deg) translate(1px, -1px); }
+}
+@keyframes fiesta-bob {
+  0%, 100% { transform: translateY(0) rotate(-2deg); }
+  50% { transform: translateY(-6px) rotate(2deg); }
+}
+@keyframes fiesta-pop {
+  0% { opacity: 0; transform: translateY(6px) scale(0.4); }
+  20% { opacity: 1; transform: translateY(0) scale(1); }
+  70% { opacity: 1; }
+  100% { opacity: 0; transform: translateY(-22px) scale(0.8); }
+}
+@keyframes fiesta-twinkle {
+  0%, 100% { opacity: 0.25; transform: scale(0.8); }
+  50% { opacity: 1; transform: scale(1.15); }
+}
+@keyframes fiesta-sway {
+  0%, 100% { transform: translateY(0) rotate(-8deg); }
+  50% { transform: translateY(-2px) rotate(8deg); }
+}
+
+/* ---- Cintas de mensajes de amor que pasan de un lado a otro ----
+   El contenido va duplicado: al llegar a la mitad, vuelve a empezar sin que se note el salto. */
+.fiesta-marquee {
+  overflow: hidden;
+  white-space: nowrap;
+  mask-image: linear-gradient(90deg, transparent, #000 6%, #000 94%, transparent);
+}
+.fiesta-marquee-track {
+  display: inline-flex;
+  width: max-content;
+  animation: fiesta-marquee 38s linear infinite;
+}
+.fiesta-marquee-track.reverse {
+  animation-direction: reverse;
+}
+
+/* "JULIAN & FIAMMA FOREVER" con brillito que recorre las letras */
+.fiesta-shimmer {
+  /* Rosas fuertes con un brillo rosa claro (no blanco, para que siempre se lea) */
+  background: linear-gradient(90deg, #be185d 0%, #db2777 30%, #f9a8d4 50%, #db2777 70%, #be185d 100%);
+  background-size: 250% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: fiesta-shimmer 3s linear infinite;
+}
+
+/* Burbujita con una frase: aparece, sube flotando y se desvanece */
+.fiesta-frase {
+  animation: fiesta-frase 4.5s ease-out forwards;
+}
+@keyframes fiesta-frase {
+  0% { opacity: 0; transform: translate(-50%, 10px) scale(0.5); }
+  12% { opacity: 1; transform: translate(-50%, 0) scale(1.08); }
+  20% { transform: translate(-50%, -4px) scale(1); }
+  80% { opacity: 1; }
+  100% { opacity: 0; transform: translate(-50%, -60px) scale(0.95); }
+}
+
+@keyframes fiesta-marquee {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
+}
+@keyframes fiesta-shimmer {
+  from { background-position: 100% 0; }
+  to { background-position: -150% 0; }
+}
+
+/* Si el teléfono pide menos movimiento (ahorro de batería o accesibilidad en Android),
+   NO escondemos nada: todo se sigue viendo, solo que la lluvia cae más despacio y suave. */
+@media (prefers-reduced-motion: reduce) {
+  .fiesta-fall {
+    animation-duration: 22s !important;
+  }
+}

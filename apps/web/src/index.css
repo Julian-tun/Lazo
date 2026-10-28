@@ -1,0 +1,55 @@
+@import "tailwindcss";
+
+/* Variante para "celular en horizontal": pantalla apaisada y poco alta.
+   Uso: phone-land:hidden, phone-land:fixed, etc. */
+@custom-variant phone-land (@media (orientation: landscape) and (max-height: 540px));
+
+:root {
+  color-scheme: dark;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  @apply bg-zinc-950 text-zinc-100 antialiased;
+}
+
+/* Aviso de mensaje sobre el video: aparece, espera y se va hacia abajo encogiéndose.
+   Uso: animate-chat-toast (dura lo mismo que TOAST_MS en ChatToasts.tsx) */
+@theme {
+  --animate-chat-toast: chat-toast 7s ease-in-out forwards;
+
+  @keyframes chat-toast {
+    0% {
+      opacity: 0;
+      transform: translateY(-8px);
+    }
+    6%,
+    75% {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+    }
+    100% {
+      opacity: 0;
+      transform: translateY(24px) scale(0.85);
+    }
+  }
+}
+
+/* Componentes reutilizables (clases propias) */
+@utility input {
+  @apply rounded-xl border border-zinc-800 bg-zinc-900 px-4 py-3 text-base outline-none placeholder:text-zinc-600 focus:border-violet-500;
+}
+@utility btn-primary {
+  @apply rounded-xl bg-violet-600 px-4 py-3 font-semibold text-white transition hover:bg-violet-500 disabled:opacity-50;
+}
+@utility btn-secondary {
+  @apply rounded-xl bg-zinc-800 px-4 py-3 font-medium text-zinc-100 transition hover:bg-zinc-700 disabled:opacity-50;
+}
+@utility btn-danger {
+  @apply rounded-xl bg-red-600/90 px-4 py-3 font-semibold text-white transition hover:bg-red-500 disabled:opacity-50;
+}
