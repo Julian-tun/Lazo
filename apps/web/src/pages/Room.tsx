@@ -12,6 +12,9 @@ import { useRoom } from '../features/room/useRoom';
 import { Logo } from '../components/Logo';
 import { HostPanel } from '../features/share/HostPanel';
 import { GuestViewer } from '../features/viewer/GuestViewer';
+import { Tutorial } from '../features/viewer/Tutorial';
+import { markTutorialSeen, tutorialSeen } from '../features/viewer/tutorialSeen';
+import { HelpIcon } from '../components/icons';
 import { loadName, saveName, useConnectionState } from '../lib/socket';
 
 export default function Room() {
@@ -31,6 +34,14 @@ export default function Room() {
   const roomTheme = room.look?.theme;
   const { changeLook } = room;
   const [myTheme, setMyTheme] = useState(loadTheme);
+  // Mini tutorial del espectador: se abre solo la primera vez; "?" lo vuelve a abrir
+  const [tutorialDone, setTutorialDone] = useState(tutorialSeen);
+  const [tutorialAgain, setTutorialAgain] = useState(false);
+  function closeTutorial() {
+    markTutorialSeen();
+    setTutorialDone(true);
+    setTutorialAgain(false);
+  }
   // Anfitrión: usa su tema guardado; si la sala tiene otro, se lo pasa a todos
   useEffect(() => {
     if (!isHost || !roomTheme) return;
@@ -75,6 +86,18 @@ export default function Room() {
       connection={connection}
       onLeave={leave}
       className={me.role === 'guest' ? 'phone-land:hidden' : ''}
+      extra={
+        me.role === 'guest' && (
+          <button
+            onClick={() => setTutorialAgain(true)}
+            title="Ver guía de botones"
+            aria-label="Ver guía de botones"
+            className="grid size-7 place-items-center rounded-full text-zinc-400 transition hover:bg-zinc-800 hover:text-zinc-100"
+          >
+            <HelpIcon />
+          </button>
+        )
+      }
     />
   );
   // Guirnalda bajo la barra + animación de cumpleaños (solo si hay fiesta)
@@ -141,6 +164,7 @@ export default function Room() {
     <div className="flex h-dvh flex-col">
       {header}
       {fiestaLayer}
+      {(!tutorialDone || tutorialAgain) && <Tutorial onClose={closeTutorial} />}
       {errorBanner}
       <main className="flex min-h-0 flex-1 flex-col lg:flex-row">
         <section className="aspect-video w-full shrink-0 bg-black lg:aspect-auto lg:min-w-0 lg:flex-1 phone-land:fixed phone-land:inset-0 phone-land:aspect-auto">

@@ -72,7 +72,7 @@ Lazo/  (carpeta E:\Lazo)
 │        │  ├─ fiesta/       tema Fiamma (rosita, se recuerda) y modo fiesta (canción y felicitaciones)
 │        │  ├─ room/         useRoom (estado de sala), RoomHeader
 │        │  ├─ share/        HostPanel (anfitrión: abrir link + compartir pestaña)
-│        │  └─ viewer/       GuestViewer (invitado: ver el stream)
+│        │  └─ viewer/       GuestViewer (invitado: ver el stream) y Tutorial (guía de botones, sale la 1.ª vez; "?" la repite)
 │        ├─ lib/
 │        │  ├─ socket.ts     conexión única de Socket.IO + estado de conexión
 │        │  ├─ webrtc.ts     RTCPeerConnection (P2P), STUN/TURN, calidad, audio estéreo

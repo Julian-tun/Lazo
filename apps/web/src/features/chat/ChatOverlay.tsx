@@ -3,6 +3,7 @@
 // - Abierto: mini chat transparente a la izquierda para responder sin girar el teléfono.
 import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { MAX_MESSAGE_LENGTH, type ChatMessage } from '@lazo/shared';
+import { ChatIcon } from '../../components/icons';
 import { ChatToasts } from './ChatToasts';
 
 interface Props {
@@ -31,9 +32,7 @@ export function ChatOverlay({ messages, meId, onSend, className = '' }: Props) {
             aria-label="Abrir chat"
             className="glass-btn absolute bottom-3 left-3 z-10 size-11"
           >
-            <svg viewBox="0 0 24 24" fill="currentColor" className="size-5" aria-hidden>
-              <path d="M12 3c5 0 9 3.6 9 8s-4 8-9 8c-1 0-2-.1-2.9-.4L4.5 20.5l1.3-3.8A7.6 7.6 0 0 1 3 11c0-4.4 4-8 9-8Z" />
-            </svg>
+            <ChatIcon />
           </button>
         </>
       )}

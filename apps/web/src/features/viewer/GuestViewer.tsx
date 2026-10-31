@@ -6,6 +6,7 @@ import { useEffect, useRef, useState, type ReactNode } from 'react';
 import type { SfuLayer } from '@lazo/shared';
 import { subscribeFromSfu, type SfuSubscriber } from '../../lib/sfu';
 import { AutoLayer, judge, readRecvSample, type RecvSample, smoothPlayback } from '../../lib/sfuQuality';
+import { ExpandIcon, GearIcon, SpeakerIcon } from '../../components/icons';
 import { ACK_TIMEOUT_MS, socket } from '../../lib/socket';
 import { createPeerLink, getIceConfig, opusStereo, type PeerLink } from '../../lib/webrtc';
 
@@ -411,16 +412,7 @@ export function GuestViewer({ meId, hostId, overlay }: Props) {
             aria-hidden
             className="animate-glow absolute -inset-1 -z-10 rounded-full bg-violet-500/50 blur-md"
           />
-          <svg viewBox="0 0 24 24" fill="currentColor" className="size-6" aria-hidden>
-            <path d="M11 5 6 9H3v6h3l5 4V5Z" />
-            <path
-              d="M15.5 8.5a5 5 0 0 1 0 7M18.5 5.5a9 9 0 0 1 0 13"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth={2}
-              strokeLinecap="round"
-            />
-          </svg>
+          <SpeakerIcon />
           Activar sonido
         </button>
       )}
@@ -435,22 +427,7 @@ export function GuestViewer({ meId, hostId, overlay }: Props) {
           aria-label="Pantalla completa"
           className="glass-btn animate-fade-in absolute right-3 bottom-3 size-11"
         >
-          <svg
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth={2}
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            className="size-5 phone-land:size-6"
-            aria-hidden
-          >
-            {isFullscreen ? (
-              <path d="M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5" />
-            ) : (
-              <path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5" />
-            )}
-          </svg>
+          <ExpandIcon className="size-5 phone-land:size-6" exit={isFullscreen} />
         </button>
       )}
 
@@ -467,19 +444,9 @@ export function GuestViewer({ meId, hostId, overlay }: Props) {
           >
             {/* Engranaje dibujado (el emoji ⚙ sale muy chiquito en Android); más grande en horizontal.
                 Gira un poco al abrir las opciones. */}
-            <svg
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth={2}
-              strokeLinecap="round"
-              strokeLinejoin="round"
+            <GearIcon
               className={`size-5 transition-transform duration-300 phone-land:size-6 ${qualityOpen ? 'rotate-90' : ''}`}
-              aria-hidden="true"
-            >
-              <circle cx="12" cy="12" r="3" />
-              <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
-            </svg>
+            />
           </button>
           {qualityOpen && (
             <div
