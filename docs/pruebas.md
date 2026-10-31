@@ -45,7 +45,7 @@ Anfitrión: **Chrome**. Invitado: **Edge** (o una ventana de incógnito de Chrom
 - [ ] `Captura:` muestra el tamaño de la pestaña y ~30 fps. Si avisa "Chrome captura pocos cuadros": dejar la
       pestaña compartida a la vista y la laptop conectada a la corriente.
 - [ ] Por espectador: `viendo ✓ · Cloudflare · Alta 720p 30fps`.
-- [ ] En el espectador, junto a ⛶, el selector dice `Auto · Alta 720p`. Elegir **Baja**: se ve más borroso en
+- [ ] En el espectador, el botón ⚙ (arriba a la izquierda) muestra las opciones con `✓ Auto · Alta 720p`. Elegir **Baja**: se ve más borroso en
       ~1 s; elegir **Auto**: vuelve a Alta.
 - [ ] Cambiar **Contenido** a "Página / texto" con una página con letras: se leen nítidas.
 - [ ] Cambiar **Calidad** a "Alta (1080p)": el espectador recibe 1080p (si la red y la compu alcanzan).
@@ -77,7 +77,7 @@ Android (Chrome) y/o iPhone (Safari):
 - [ ] **Horizontal:** el video ocupa toda la pantalla; el chat está oculto.
   - [ ] El botón **‹ Chat** lo muestra como capa semitransparente a la derecha; **Ocultar chat ›** lo esconde.
   - [ ] Con el chat cerrado, el botón muestra cuántos mensajes nuevos hay.
-- [ ] El botón ⛶ pone el video en pantalla completa (en iPhone usa el reproductor del sistema).
+- [ ] El botón ⛶ (abajo a la derecha) pone el video en pantalla completa (en iPhone usa el reproductor del sistema).
 - [ ] **Avisos de mensajes:** en pantalla completa (o en horizontal con el chat cerrado), un mensaje del
       anfitrión aparece pequeño sobre el video y a los ~7 s baja y desaparece. Los tuyos no salen como aviso.
 - [ ] **Responder sin girar:** tocar un aviso (o el botón 💬) abre un mini chat transparente a la izquierda.

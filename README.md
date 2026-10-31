@@ -178,7 +178,7 @@ el script también lo busca donde lo instala winget y en el PATH. Puede funciona
   (un cuarto). Su subida ya no se multiplica por el número de espectadores.
 - Cada espectador mide cada 2 s cómo le llega el video (pérdidas, retraso, congelamientos) y **baja o sube de
   capa solo** (`Auto`). Si uno tiene mal internet, a los demás no les afecta. También puede fijar la calidad
-  con el selector junto al botón de pantalla completa: Auto / Alta / Media / Baja.
+  con el botón ⚙ (arriba a la izquierda del video; al tocarlo salen Auto / Alta / Media / Baja).
 
 **En P2P:** cada espectador tiene su propia conexión y WebRTC ajusta la calidad solo para él. Se prefiere
 **VP9** (más nítido con la misma red); si el navegador del espectador no lo tiene, se usa VP8.
