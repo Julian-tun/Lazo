@@ -5,7 +5,7 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import type { SfuLayer } from '@lazo/shared';
 import { subscribeFromSfu, type SfuSubscriber } from '../../lib/sfu';
-import { AutoLayer, judge, readRecvSample, type RecvSample } from '../../lib/sfuQuality';
+import { AutoLayer, judge, readRecvSample, type RecvSample, smoothPlayback } from '../../lib/sfuQuality';
 import { ACK_TIMEOUT_MS, socket } from '../../lib/socket';
 import { createPeerLink, getIceConfig, opusStereo, type PeerLink } from '../../lib/webrtc';
 
@@ -51,6 +51,7 @@ export function GuestViewer({ meId, hostId, overlay }: Props) {
   const [muted, setMuted] = useState(true);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [qualityOpen, setQualityOpen] = useState(false); // ¿se ven las opciones de calidad?
+  const autoRestartRef = useRef(false); // true = se acaba de elegir "Auto": el automático empieza de cero
   const qualityRef = useRef<HTMLDivElement>(null); // botón ⚙ + sus opciones
 
   // Opciones de calidad abiertas: tocar en otra parte del VIDEO las cierra
@@ -184,6 +185,7 @@ export function GuestViewer({ meId, hostId, overlay }: Props) {
       earlyIce = [];
 
       link.pc.ontrack = (e) => {
+        smoothPlayback(link.pc); // colchón de reproducción para que no se trabe
         const [remote] = e.streams;
         if (remote) show(remote);
       };
@@ -269,6 +271,11 @@ export function GuestViewer({ meId, hostId, overlay }: Props) {
             lossPct: j.lossRate * 100,
           });
         }
+        // Se acaba de elegir "Auto": empieza de cero desde la capa pedida (la más alta)
+        if (autoRestartRef.current) {
+          autoRestartRef.current = false;
+          auto.restart(layerRef.current, Date.now());
+        }
         // El automático debe partir de la capa que de verdad se recibe (p. ej. si se eligió a mano)
         if (auto.layer !== layerRef.current) auto.sync(layerRef.current, Date.now());
         // Calidad elegida a mano: el automático no decide nada
@@ -298,10 +305,13 @@ export function GuestViewer({ meId, hostId, overlay }: Props) {
     setQualityOpen(false);
     setChoice(c);
     choiceRef.current = c;
-    if (c !== 'auto' && c !== layerRef.current && (await askLayer(c))) {
-      layerRef.current = c;
-      setLayer(c);
+    // "Auto" empieza por la más alta (Alta); si el internet no la aguanta, baja sola en unos segundos
+    const want: SfuLayer = c === 'auto' ? 'f' : c;
+    if (want !== layerRef.current && (await askLayer(want))) {
+      layerRef.current = want;
+      setLayer(want);
     }
+    if (c === 'auto') autoRestartRef.current = true;
   }
 
   function unmute() {

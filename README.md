@@ -179,6 +179,12 @@ el script también lo busca donde lo instala winget y en el PATH. Puede funciona
 - Cada espectador mide cada 2 s cómo le llega el video (pérdidas, retraso, congelamientos) y **baja o sube de
   capa solo** (`Auto`). Si uno tiene mal internet, a los demás no les afecta. También puede fijar la calidad
   con el botón ⚙ (arriba a la izquierda del video; al tocarlo salen Auto / Alta / Media / Baja).
+  Al elegir `Auto` pide Alta enseguida; si su internet no la aguanta, baja en pocos segundos.
+- Prioridad: **que no se trabe**. Baja rápido ante cualquier problema (sobre todo justo después de subir) y
+  sube con calma; si una subida sale mal, espera más antes de reintentar.
+
+**Colchón de reproducción (SFU y P2P):** cada espectador guarda ~0.3 s de video y audio antes de mostrarlo
+(`jitterBufferTarget`), así un bajón cortito de internet no se nota. Imagen y sonido van juntos.
 
 **En P2P:** cada espectador tiene su propia conexión y WebRTC ajusta la calidad solo para él. Se prefiere
 **VP9** (más nítido con la misma red); si el navegador del espectador no lo tiene, se usa VP8.

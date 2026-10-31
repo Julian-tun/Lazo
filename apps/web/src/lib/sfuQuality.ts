@@ -29,6 +29,24 @@ export interface Judgement {
   fps: number;
 }
 
+// ---- Colchón de reproducción ----
+// El navegador guarda este tiempo de video y audio antes de mostrarlo. Si el internet tiene un
+// bajón cortito, se sigue reproduciendo del colchón y no se traba. Para una película no
+// estorba: todo llega 0.3 s más tarde, imagen y sonido juntos.
+export const PLAYOUT_BUFFER_MS = 300;
+
+/** Pone el colchón en lo que recibe esta conexión (video y audio). Sirve para SFU y P2P. */
+export function smoothPlayback(pc: RTCPeerConnection): void {
+  for (const r of pc.getReceivers()) {
+    try {
+      // jitterBufferTarget: Chrome/Edge/Android. Si el navegador no lo conoce, no pasa nada.
+      (r as RTCRtpReceiver & { jitterBufferTarget?: number | null }).jitterBufferTarget = PLAYOUT_BUFFER_MS;
+    } catch {
+      // valor no aceptado: se queda el del navegador
+    }
+  }
+}
+
 export async function readRecvSample(pc: RTCPeerConnection): Promise<RecvSample | null> {
   const stats = await pc.getStats();
   let v: Record<string, number | undefined> | undefined;
@@ -63,8 +81,9 @@ export function judge(prev: RecvSample, cur: RecvSample): Judgement {
 
 // ---- Reglas (ajustables) ----
 const LOSS_BAD = 0.03; // 3 % de paquetes perdidos = mal
-const LOSS_SEVERE = 0.1; // 10 % = muy mal: bajar ya, sin esperar otra medición
-const DELAY_BAD_MS = 500; // más de medio segundo de espera = la red no da abasto
+const LOSS_SEVERE = 0.06; // 6 % = muy mal: bajar ya, sin esperar otra medición
+// Espera en el colchón mayor que el colchón + medio segundo = la red no da abasto
+const DELAY_BAD_MS = PLAYOUT_BUFFER_MS + 500;
 const GRACE_MS = 5000; // tras cambiar de capa, esperar a que se asiente antes de juzgar
 const UPGRADE_WAIT_MS = 20_000; // tiempo bien antes de intentar subir
 const UPGRADE_WAIT_MAX_MS = 160_000; // si subir sale mal varias veces, esperar hasta esto
@@ -107,8 +126,12 @@ export class AutoLayer {
       this.goodSince ??= now;
     }
 
-    // Bajar: muy mal una vez, o mal dos mediciones seguidas
-    if ((severe || this.badStreak >= 2) && this.layer !== 'q') {
+    // Recién subimos (o se eligió Auto): una sola medición mala basta para volver a bajar,
+    // así un intento que no aguanta dura lo mínimo y casi no se nota
+    const probation = now - this.lastUpgradeAt < FAILED_UPGRADE_MS;
+
+    // Bajar: muy mal una vez, mal dos mediciones seguidas, o mal estando "a prueba"
+    if ((severe || this.badStreak >= 2 || (bad && probation)) && this.layer !== 'q') {
       // Si acabamos de subir y ya va mal, esa capa no aguanta: esperar más antes de reintentar
       if (now - this.lastUpgradeAt < FAILED_UPGRADE_MS) {
         this.upgradeWait = Math.min(this.upgradeWait * 2, UPGRADE_WAIT_MAX_MS);
@@ -130,6 +153,17 @@ export class AutoLayer {
    */
   sync(layer: SfuLayer, now: number): void {
     this.change(layer, now);
+  }
+
+  /**
+   * El espectador acaba de elegir "Auto": empezamos en la capa pedida (la más alta) como si
+   * fuera una subida nueva. Se olvida la espera larga de intentos viejos; si esta capa va mal
+   * enseguida, se baja y la espera vuelve a crecer.
+   */
+  restart(layer: SfuLayer, now: number): void {
+    this.change(layer, now);
+    this.upgradeWait = UPGRADE_WAIT_MS;
+    this.lastUpgradeAt = now;
   }
 
   private change(to: SfuLayer, now: number): SfuLayer {

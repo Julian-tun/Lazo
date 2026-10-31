@@ -6,6 +6,7 @@
 // El navegador nunca habla directo con la API de Cloudflare: todo pasa por nuestro servidor.
 import type { SfuLayer, SfuTrack } from '@lazo/shared';
 import { socket } from './socket';
+import { smoothPlayback } from './sfuQuality';
 import { CONTENT, opusStereo, QUALITY, type ContentType, type Quality } from './webrtc';
 
 // Cloudflare responde por la red de nuestro servidor: le damos un poco más de tiempo
@@ -190,6 +191,7 @@ export async function subscribeFromSfu(
     await pc.setRemoteDescription(r.data.sdp);
     // Al aplicar la oferta ya existen las pistas que van a llegar: las juntamos en un stream
     const stream = new MediaStream(pc.getTransceivers().map((t) => t.receiver.track));
+    smoothPlayback(pc); // colchón de reproducción para que no se trabe
     const answer = await pc.createAnswer();
     // Audio en estéreo: el que recibe también lo indica en su respuesta (ver opusStereo)
     await pc.setLocalDescription({ type: 'answer', sdp: opusStereo(answer.sdp ?? '') });
