@@ -51,6 +51,19 @@ export function GuestViewer({ meId, hostId, overlay }: Props) {
   const [muted, setMuted] = useState(true);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [qualityOpen, setQualityOpen] = useState(false); // ¿se ven las opciones de calidad?
+  const qualityRef = useRef<HTMLDivElement>(null); // botón ⚙ + sus opciones
+
+  // Opciones de calidad abiertas: tocar en otra parte del VIDEO las cierra
+  // (tocar el chat o la barra de arriba no las cierra)
+  useEffect(() => {
+    if (!qualityOpen) return;
+    const onDown = (e: PointerEvent) => {
+      const t = e.target as Node;
+      if (boxRef.current?.contains(t) && !qualityRef.current?.contains(t)) setQualityOpen(false);
+    };
+    document.addEventListener('pointerdown', onDown);
+    return () => document.removeEventListener('pointerdown', onDown);
+  }, [qualityOpen]);
 
   // Saber si estamos en pantalla completa, y salir solos al girar a vertical
   // (así se ve el chat para contestar).
@@ -363,7 +376,7 @@ export function GuestViewer({ meId, hostId, overlay }: Props) {
       {/* Calidad del video (solo si llega por Cloudflare): un botón chiquito ⚙ que al tocarlo
           muestra las opciones. Auto la ajusta según tu internet. */}
       {status === 'live' && via === 'sfu' && (
-        <>
+        <div ref={qualityRef}>
           <button
             onClick={() => setQualityOpen((v) => !v)}
             title="Calidad del video"
@@ -374,37 +387,29 @@ export function GuestViewer({ meId, hostId, overlay }: Props) {
             ⚙
           </button>
           {qualityOpen && (
-            <>
-              {/* Tocar fuera de las opciones las cierra */}
-              <button
-                aria-label="Cerrar opciones de calidad"
-                className="absolute inset-0 z-20 cursor-default"
-                onClick={() => setQualityOpen(false)}
-              />
-              <div
-                role="menu"
-                aria-label="Opciones de calidad"
-                className="absolute top-10 left-2 z-30 flex flex-col overflow-hidden rounded-lg bg-zinc-900/95 py-1 text-sm text-white shadow-xl shadow-black/50"
-              >
-                {(['auto', 'f', 'h', 'q'] as Choice[]).map((c) => (
-                  <button
-                    key={c}
-                    role="menuitemradio"
-                    aria-checked={choice === c}
-                    data-value={c}
-                    onClick={() => void chooseQuality(c)}
-                    className="flex items-center gap-2 px-3 py-1.5 text-left whitespace-nowrap hover:bg-white/10"
-                  >
-                    <span className="w-3">{choice === c ? '✓' : ''}</span>
-                    {c === 'auto'
-                      ? `Auto · ${LAYER_LABEL[layer]}${recv?.height ? ` ${recv.height}p` : ''}`
-                      : LAYER_LABEL[c]}
-                  </button>
-                ))}
-              </div>
-            </>
+            <div
+              role="menu"
+              aria-label="Opciones de calidad"
+              className="absolute top-10 left-2 z-30 flex flex-col overflow-hidden rounded-lg bg-zinc-900/95 py-1 text-sm text-white shadow-xl shadow-black/50"
+            >
+              {(['auto', 'f', 'h', 'q'] as Choice[]).map((c) => (
+                <button
+                  key={c}
+                  role="menuitemradio"
+                  aria-checked={choice === c}
+                  data-value={c}
+                  onClick={() => void chooseQuality(c)}
+                  className="flex items-center gap-2 px-3 py-1.5 text-left whitespace-nowrap hover:bg-white/10"
+                >
+                  <span className="w-3">{choice === c ? '✓' : ''}</span>
+                  {c === 'auto'
+                    ? `Auto · ${LAYER_LABEL[layer]}${recv?.height ? ` ${recv.height}p` : ''}`
+                    : LAYER_LABEL[c]}
+                </button>
+              ))}
+            </div>
           )}
-        </>
+        </div>
       )}
     </div>
   );
