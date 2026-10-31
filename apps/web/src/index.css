@@ -4,25 +4,60 @@
    Uso: phone-land:hidden, phone-land:fixed, etc. */
 @custom-variant phone-land (@media (orientation: landscape) and (max-height: 540px));
 
-:root {
-  color-scheme: dark;
-}
+/* ============================================================
+   Diseño base de Lazo.
+   IMPORTANTE: usamos solo las paletas "zinc" (fondos y textos) y "violet" (acentos), porque el
+   tema Fiamma 🌸 (features/fiesta/tema.css) las cambia por rosas. Así todo se adapta solo.
+   ============================================================ */
 
-html,
-body,
-#root {
-  height: 100%;
-}
-
-body {
-  @apply bg-zinc-950 text-zinc-100 antialiased;
-}
-
-/* Aviso de mensaje sobre el video: aparece, espera y se va hacia abajo encogiéndose.
-   Uso: animate-chat-toast (dura lo mismo que TOAST_MS en ChatToasts.tsx) */
 @theme {
+  --font-sans: 'Inter Variable', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+
+  /* ---- Animaciones reutilizables (clases animate-*) ---- */
+  --animate-fade-in: fade-in 0.4s ease-out both;
+  --animate-fade-up: fade-up 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
+  --animate-scale-in: scale-in 0.25s cubic-bezier(0.22, 1, 0.36, 1) both;
+  --animate-pop-in: pop-in 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+  --animate-float: float 6s ease-in-out infinite;
+  --animate-glow: glow 2.4s ease-in-out infinite;
+
+  /* Aviso de mensaje sobre el video: aparece, espera y se va hacia abajo encogiéndose.
+     Uso: animate-chat-toast (dura lo mismo que TOAST_MS en ChatToasts.tsx) */
   --animate-chat-toast: chat-toast 7s ease-in-out forwards;
 
+  @keyframes fade-in {
+    from {
+      opacity: 0;
+    }
+  }
+  @keyframes fade-up {
+    from {
+      opacity: 0;
+      transform: translateY(14px);
+    }
+  }
+  @keyframes scale-in {
+    from {
+      opacity: 0;
+      transform: scale(0.94) translateY(-4px);
+    }
+  }
+  @keyframes pop-in {
+    from {
+      opacity: 0;
+      transform: scale(0.85) translateY(6px);
+    }
+  }
+  @keyframes float {
+    50% {
+      transform: translateY(-8px);
+    }
+  }
+  @keyframes glow {
+    50% {
+      opacity: 0.55;
+    }
+  }
   @keyframes chat-toast {
     0% {
       opacity: 0;
@@ -40,16 +75,77 @@ body {
   }
 }
 
-/* Componentes reutilizables (clases propias) */
+:root {
+  color-scheme: dark;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  @apply bg-zinc-950 font-sans text-zinc-100 antialiased;
+  /* Dos luces suaves del color de acento en las esquinas (dan profundidad sin distraer) */
+  background-image:
+    radial-gradient(
+      60rem 40rem at 10% -10%,
+      color-mix(in oklab, var(--color-violet-600) 14%, transparent),
+      transparent 60%
+    ),
+    radial-gradient(
+      50rem 35rem at 110% 110%,
+      color-mix(in oklab, var(--color-violet-500) 10%, transparent),
+      transparent 60%
+    );
+  background-attachment: fixed;
+  -webkit-tap-highlight-color: transparent;
+}
+
+::selection {
+  background: color-mix(in oklab, var(--color-violet-500) 40%, transparent);
+}
+
+/* Barras de desplazamiento finas y discretas */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-zinc-700) transparent;
+}
+
+/* Si la persona pidió "reducir movimiento" en su sistema, quitamos las animaciones */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* ---- Componentes reutilizables (clases propias) ---- */
 @utility input {
-  @apply rounded-xl border border-zinc-800 bg-zinc-900 px-4 py-3 text-base outline-none placeholder:text-zinc-600 focus:border-violet-500;
+  @apply rounded-xl border border-zinc-800 bg-zinc-900/70 px-4 py-3 text-base shadow-inner shadow-black/10 transition outline-none placeholder:text-zinc-500 hover:border-zinc-700 focus:border-violet-500 focus:ring-4 focus:ring-violet-500/15;
 }
 @utility btn-primary {
-  @apply rounded-xl bg-violet-600 px-4 py-3 font-semibold text-white transition hover:bg-violet-500 disabled:opacity-50;
+  @apply inline-flex items-center justify-center gap-2 rounded-xl bg-linear-to-b from-violet-500 to-violet-600 px-4 py-3 font-semibold text-white shadow-lg shadow-violet-600/25 ring-1 ring-white/10 transition ring-inset hover:brightness-110 active:scale-[0.98] disabled:pointer-events-none disabled:opacity-50;
 }
 @utility btn-secondary {
-  @apply rounded-xl bg-zinc-800 px-4 py-3 font-medium text-zinc-100 transition hover:bg-zinc-700 disabled:opacity-50;
+  @apply inline-flex items-center justify-center gap-2 rounded-xl border border-zinc-700/70 bg-zinc-800/80 px-4 py-3 font-medium text-zinc-100 transition hover:border-zinc-600 hover:bg-zinc-700/80 active:scale-[0.98] disabled:pointer-events-none disabled:opacity-50;
 }
 @utility btn-danger {
-  @apply rounded-xl bg-red-600/90 px-4 py-3 font-semibold text-white transition hover:bg-red-500 disabled:opacity-50;
+  @apply inline-flex items-center justify-center gap-2 rounded-xl bg-linear-to-b from-red-500 to-red-600 px-4 py-3 font-semibold text-white shadow-lg shadow-red-600/25 ring-1 ring-white/10 transition ring-inset hover:brightness-110 active:scale-[0.98] disabled:opacity-50;
+}
+/* Tarjeta: caja con borde suave y fondo apenas transparente */
+@utility card {
+  @apply rounded-2xl border border-zinc-800/80 bg-zinc-900/50 shadow-xl shadow-black/10 backdrop-blur-sm;
+}
+/* Botón redondo sobre el video (vidrio oscuro) */
+@utility glass-btn {
+  @apply grid place-items-center rounded-full bg-black/45 text-white/90 shadow-lg ring-1 ring-white/10 backdrop-blur-md transition hover:bg-black/65 active:scale-95;
+}
+/* Lista desplegable con el mismo estilo que los campos */
+@utility select {
+  @apply cursor-pointer rounded-lg border border-zinc-800 bg-zinc-900 px-2.5 py-1.5 text-sm text-zinc-100 transition outline-none hover:border-zinc-700 focus:border-violet-500 focus:ring-4 focus:ring-violet-500/15;
 }

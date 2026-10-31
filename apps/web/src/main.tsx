@@ -3,6 +3,7 @@ import { createRoot } from 'react-dom/client';
 import { BrowserRouter } from 'react-router-dom';
 import App from './App';
 import { applyTheme, loadTheme } from './features/fiesta/tema';
+import '@fontsource-variable/inter'; // tipografía de toda la app
 import './index.css';
 
 // Tema elegido la última vez (normal o rosita), desde la primera pantalla

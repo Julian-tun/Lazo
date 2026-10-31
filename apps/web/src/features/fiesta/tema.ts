@@ -1,6 +1,9 @@
 // Tema de colores de la app: "normal" (oscuro) o "fiamma" (rosita 🌸).
 // Se recuerda en este navegador, así se queda igual para siempre hasta que lo cambies.
 import type { RoomTheme } from '@lazo/shared';
+// Letra redondita del tema Fiamma (normal y negrita)
+import '@fontsource/fredoka/latin-500.css';
+import '@fontsource/fredoka/latin-700.css';
 import './tema.css';
 
 const THEME_KEY = 'duo:tema';
