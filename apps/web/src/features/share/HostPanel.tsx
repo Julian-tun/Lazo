@@ -8,6 +8,7 @@ import {
   type LayerStats,
   type SfuPublisher,
 } from '../../lib/sfu';
+import { Avatar } from '../../components/Avatar';
 import { socket } from '../../lib/socket';
 import {
   captureConstraints,
@@ -472,18 +473,19 @@ export function HostPanel({ guests, theme, onTheme, fiesta, onFiesta }: Props) {
   const sharing = stream !== null;
 
   return (
-    <div className="flex flex-col gap-4 p-4">
+    <div className="flex flex-col gap-4 p-4 sm:p-6">
       {!canShare && (
-        <p className="rounded-lg bg-amber-950/60 px-3 py-2 text-sm text-amber-200">
+        <p className="animate-fade-in rounded-xl border border-amber-500/20 bg-amber-950/50 px-4 py-3 text-sm text-amber-200">
           Para compartir necesitas Chrome o Edge en una computadora. En el celular solo se puede ver como
           invitado.
         </p>
       )}
 
       {/* Paso 1: abrir el link */}
-      <section className="flex flex-col gap-2">
-        <label className="text-sm text-zinc-300" htmlFor="share-url">
-          1. Pega el link que quieren ver
+      <section className="card animate-fade-up flex flex-col gap-3 p-4 sm:p-5">
+        <label className="flex items-center gap-2.5 text-sm font-medium text-zinc-200" htmlFor="share-url">
+          <StepBadge n={1} />
+          Pega el link que quieren ver
         </label>
         <div className="flex flex-col gap-2 sm:flex-row">
           <input
@@ -502,8 +504,16 @@ export function HostPanel({ guests, theme, onTheme, fiesta, onFiesta }: Props) {
       </section>
 
       {/* Paso 2: compartir la pestaña */}
-      <section className="flex flex-col gap-2">
-        <span className="text-sm text-zinc-300">2. Comparte esa pestaña (marca “Compartir audio”)</span>
+      <section
+        className="card animate-fade-up flex flex-col gap-4 p-4 sm:p-5"
+        style={{ animationDelay: '70ms' }}
+      >
+        <span className="flex items-center gap-2.5 text-sm font-medium text-zinc-200">
+          <StepBadge n={2} />
+          <span>
+            Comparte esa pestaña <span className="font-normal text-zinc-500">(marca “Compartir audio”)</span>
+          </span>
+        </span>
         <div className="flex flex-wrap items-center gap-3">
           {sharing ? (
             <button className="btn-danger" onClick={stopShare}>
@@ -514,17 +524,28 @@ export function HostPanel({ guests, theme, onTheme, fiesta, onFiesta }: Props) {
               Compartir pestaña
             </button>
           )}
-          <span className="flex items-center gap-1.5 text-sm">
-            <span
-              className={`size-2.5 rounded-full ${sharing ? 'animate-pulse bg-red-500' : 'bg-zinc-600'}`}
-            />
+          {/* Estado: "Compartiendo" con punto rojo que late, o "Detenido" */}
+          <span
+            className={`flex items-center gap-2 rounded-full border px-3 py-1 text-xs font-medium transition ${
+              sharing
+                ? 'border-red-500/30 bg-red-500/10 text-red-300'
+                : 'border-zinc-800 bg-zinc-900/60 text-zinc-400'
+            }`}
+          >
+            <span className="relative flex size-2">
+              {sharing && <span className="absolute inset-0 animate-ping rounded-full bg-red-500/70" />}
+              <span className={`relative size-2 rounded-full ${sharing ? 'bg-red-500' : 'bg-zinc-600'}`} />
+            </span>
             {sharing ? 'Compartiendo' : 'Detenido'}
           </span>
+        </div>
+        {/* Ajustes del envío (se pueden cambiar mientras se comparte) */}
+        <div className="flex flex-wrap items-center gap-x-5 gap-y-2">
           {/* Calidad máxima: cada espectador recibe lo mejor que permita SU conexión, hasta este tope */}
-          <label className="flex items-center gap-1.5 text-sm text-zinc-300">
+          <label className="flex items-center gap-2 text-sm text-zinc-400">
             Calidad:
             <select
-              className="rounded-lg border border-zinc-800 bg-zinc-900 px-2 py-1 text-sm"
+              className="select"
               value={quality}
               onChange={(e) => void changeQuality(e.target.value as Quality)}
             >
@@ -536,10 +557,10 @@ export function HostPanel({ guests, theme, onTheme, fiesta, onFiesta }: Props) {
             </select>
           </label>
           {/* Qué se comparte: decide si se cuida la fluidez o la nitidez cuando falta red */}
-          <label className="flex items-center gap-1.5 text-sm text-zinc-300">
+          <label className="flex items-center gap-2 text-sm text-zinc-400">
             Contenido:
             <select
-              className="rounded-lg border border-zinc-800 bg-zinc-900 px-2 py-1 text-sm"
+              className="select"
               value={content}
               onChange={(e) => void changeContent(e.target.value as ContentType)}
             >
@@ -551,120 +572,141 @@ export function HostPanel({ guests, theme, onTheme, fiesta, onFiesta }: Props) {
             </select>
           </label>
         </div>
-        {/* Cómo se envía el video: por Cloudflare (una sola subida) o directo a cada espectador */}
+        {/* Estado del envío: cómo sale el video, qué se captura y cómo le llega a cada uno */}
         {sharing && (
-          <p className="text-xs text-zinc-500">
-            Envío: {(mode === null || mode === 'iniciando') && 'preparando…'}
-            {mode === 'p2p' && 'directo a cada espectador (P2P)'}
-            {mode === 'sfu' && (
-              <span className="text-sky-300">vía Cloudflare (SFU): una sola subida para todos</span>
+          <div className="animate-fade-in space-y-1.5 rounded-xl border border-zinc-800/80 bg-zinc-950/40 p-3">
+            {/* Cómo se envía el video: por Cloudflare (una sola subida) o directo a cada espectador */}
+            {sharing && (
+              <p className="text-xs text-zinc-500">
+                Envío: {(mode === null || mode === 'iniciando') && 'preparando…'}
+                {mode === 'p2p' && 'directo a cada espectador (P2P)'}
+                {mode === 'sfu' && (
+                  <span className="text-sky-300">vía Cloudflare (SFU): una sola subida para todos</span>
+                )}
+                {mode === 'sfu' && sfuInfo && (
+                  <span>
+                    {' · capas '}
+                    {sfuInfo.layers
+                      .map((l) => `${LAYER_LABEL[l.rid]} ${l.height ? `${l.height}p` : 'pausada'}`)
+                      .join(' / ')}
+                    {sfuInfo.kbps !== null && ` · ${(sfuInfo.kbps / 1000).toFixed(1)} Mbps`}
+                  </span>
+                )}
+                {mode === 'sfu' && sfuInfo?.layers.some((l) => l.limitedBy === 'cpu') && (
+                  <span className="text-amber-300"> · ⚠ limitado por tu compu</span>
+                )}
+                {mode === 'sfu' && sfuInfo?.layers.some((l) => l.limitedBy === 'bandwidth') && (
+                  <span className="text-amber-300"> · ⚠ limitado por tu subida de internet</span>
+                )}
+              </p>
             )}
-            {mode === 'sfu' && sfuInfo && (
-              <span>
-                {' · capas '}
-                {sfuInfo.layers
-                  .map((l) => `${LAYER_LABEL[l.rid]} ${l.height ? `${l.height}p` : 'pausada'}`)
-                  .join(' / ')}
-                {sfuInfo.kbps !== null && ` · ${(sfuInfo.kbps / 1000).toFixed(1)} Mbps`}
-              </span>
+            {/* Lo que Chrome captura de la pestaña: si aquí ya sale chico o lento, el problema es la captura */}
+            {sharing && capture && (
+              <p className="text-xs text-zinc-500">
+                Captura: {capture.width}x{capture.height}
+                {capture.fps !== null && ` ${Math.round(capture.fps)}fps`}
+                {capture.fps !== null && capture.fps < 15 && (
+                  <span className="text-amber-300">
+                    {' '}
+                    · ⚠ Chrome captura pocos cuadros: deja la pestaña compartida a la vista y la compu
+                    conectada a la corriente
+                  </span>
+                )}
+              </p>
             )}
-            {mode === 'sfu' && sfuInfo?.layers.some((l) => l.limitedBy === 'cpu') && (
-              <span className="text-amber-300"> · ⚠ limitado por tu compu</span>
-            )}
-            {mode === 'sfu' && sfuInfo?.layers.some((l) => l.limitedBy === 'bandwidth') && (
-              <span className="text-amber-300"> · ⚠ limitado por tu subida de internet</span>
-            )}
-          </p>
-        )}
-        {/* Lo que Chrome captura de la pestaña: si aquí ya sale chico o lento, el problema es la captura */}
-        {sharing && capture && (
-          <p className="text-xs text-zinc-500">
-            Captura: {capture.width}x{capture.height}
-            {capture.fps !== null && ` ${Math.round(capture.fps)}fps`}
-            {capture.fps !== null && capture.fps < 15 && (
-              <span className="text-amber-300">
-                {' '}
-                · ⚠ Chrome captura pocos cuadros: deja la pestaña compartida a la vista y la compu conectada a
-                la corriente
-              </span>
-            )}
-          </p>
-        )}
-        {sharing &&
-          (guests.length === 0 ? (
-            <p className="text-xs text-zinc-400">Esperando a que entren espectadores…</p>
-          ) : (
-            // Una línea por espectador con el estado de su video
-            <ul className="space-y-0.5 text-xs text-zinc-400">
-              {guests.map((g) => {
-                const state = peerStates[g.id];
-                const route = state === 'connected' ? routes[g.id] : undefined;
-                const info = state === 'connected' ? sendInfo[g.id] : undefined;
-                const gs = guestStats[g.id];
-                return (
-                  <li key={g.id}>
-                    {g.name}:{' '}
-                    <span
-                      className={
-                        state === 'connected' ? 'text-emerald-400' : state === 'failed' ? 'text-red-300' : ''
-                      }
-                    >
-                      {state ? PEER_LABEL[state] : mode === 'sfu' ? '' : 'esperando…'}
-                    </span>
-                    {/* Por Cloudflare: lo que el espectador dice que recibe (capa, alto, fps y pérdidas) */}
-                    {!state &&
-                      mode === 'sfu' &&
-                      (gs ? (
-                        <>
-                          <span className="text-emerald-400">viendo ✓</span>
-                          <span className="text-sky-300"> · Cloudflare</span>
-                          <span className="text-zinc-500">
-                            {` · ${LAYER_LABEL[gs.layer]}${gs.auto ? '' : ' (fija)'}`}
-                            {gs.height ? ` ${gs.height}p` : ''}
-                            {` ${gs.fps}fps`}
+            {sharing &&
+              (guests.length === 0 ? (
+                <p className="flex items-center gap-2 text-xs text-zinc-400">
+                  <span className="size-1.5 animate-pulse rounded-full bg-zinc-500" />
+                  Esperando a que entren espectadores…
+                </p>
+              ) : (
+                // Una línea por espectador con el estado de su video
+                <ul className="space-y-1.5 text-xs text-zinc-400">
+                  {guests.map((g) => {
+                    const state = peerStates[g.id];
+                    const route = state === 'connected' ? routes[g.id] : undefined;
+                    const info = state === 'connected' ? sendInfo[g.id] : undefined;
+                    const gs = guestStats[g.id];
+                    return (
+                      <li key={g.id} className="animate-fade-in flex items-start gap-2">
+                        <Avatar name={g.name} className="size-5 text-[10px]" />
+                        {/* Todo el texto de la fila va junto, en una sola línea */}
+                        <span className="pt-0.5">
+                          {g.name}:{' '}
+                          <span
+                            className={
+                              state === 'connected'
+                                ? 'text-emerald-400'
+                                : state === 'failed'
+                                  ? 'text-red-300'
+                                  : ''
+                            }
+                          >
+                            {state ? PEER_LABEL[state] : mode === 'sfu' ? '' : 'esperando…'}
                           </span>
-                          {gs.lossPct >= 3 && (
-                            <span className="text-amber-300"> · ⚠ su internet pierde {gs.lossPct}%</span>
+                          {/* Por Cloudflare: lo que el espectador dice que recibe (capa, alto, fps y pérdidas) */}
+                          {!state &&
+                            mode === 'sfu' &&
+                            (gs ? (
+                              <>
+                                <span className="text-emerald-400">viendo ✓</span>
+                                <span className="text-sky-300"> · Cloudflare</span>
+                                <span className="text-zinc-500">
+                                  {` · ${LAYER_LABEL[gs.layer]}${gs.auto ? '' : ' (fija)'}`}
+                                  {gs.height ? ` ${gs.height}p` : ''}
+                                  {` ${gs.fps}fps`}
+                                </span>
+                                {gs.lossPct >= 3 && (
+                                  <span className="text-amber-300">
+                                    {' '}
+                                    · ⚠ su internet pierde {gs.lossPct}%
+                                  </span>
+                                )}
+                              </>
+                            ) : (
+                              <span className="text-sky-300">conectando por Cloudflare…</span>
+                            ))}
+                          {route && (
+                            <span className={route === 'relay' ? 'text-sky-300' : 'text-zinc-500'}>
+                              {route === 'relay' ? ' · por TURN (respaldo)' : ' · directo'}
+                            </span>
                           )}
-                        </>
-                      ) : (
-                        <span className="text-sky-300">conectando por Cloudflare…</span>
-                      ))}
-                    {route && (
-                      <span className={route === 'relay' ? 'text-sky-300' : 'text-zinc-500'}>
-                        {route === 'relay' ? ' · por TURN (respaldo)' : ' · directo'}
-                      </span>
-                    )}
-                    {/* Calidad real que le llega: alto en píxeles, cuadros por segundo y velocidad */}
-                    {info?.height && (
-                      <span className="text-zinc-500">
-                        {` · ${info.height}p`}
-                        {info.fps ? ` ${Math.round(info.fps)}fps` : ''}
-                        {info.kbps !== null ? ` ${(info.kbps / 1000).toFixed(1)} Mbps` : ''}
-                        {info.codec ? ` ${info.codec}` : ''}
-                      </span>
-                    )}
-                    {info?.limitedBy === 'cpu' && (
-                      <span className="text-amber-300"> · ⚠ limitado por tu compu</span>
-                    )}
-                    {info?.limitedBy === 'bandwidth' && (
-                      <span className="text-amber-300"> · ⚠ limitado por la red</span>
-                    )}
-                  </li>
-                );
-              })}
-            </ul>
-          ))}
+                          {/* Calidad real que le llega: alto en píxeles, cuadros por segundo y velocidad */}
+                          {info?.height && (
+                            <span className="text-zinc-500">
+                              {` · ${info.height}p`}
+                              {info.fps ? ` ${Math.round(info.fps)}fps` : ''}
+                              {info.kbps !== null ? ` ${(info.kbps / 1000).toFixed(1)} Mbps` : ''}
+                              {info.codec ? ` ${info.codec}` : ''}
+                            </span>
+                          )}
+                          {info?.limitedBy === 'cpu' && (
+                            <span className="text-amber-300"> · ⚠ limitado por tu compu</span>
+                          )}
+                          {info?.limitedBy === 'bandwidth' && (
+                            <span className="text-amber-300"> · ⚠ limitado por la red</span>
+                          )}
+                        </span>
+                      </li>
+                    );
+                  })}
+                </ul>
+              ))}
+          </div>
+        )}
+      </section>
 
+      {/* Ambiente de la sala: tema de colores y modo fiesta (para todos) */}
+      <section
+        className="card animate-fade-up flex flex-col gap-3 p-4 sm:p-5"
+        style={{ animationDelay: '140ms' }}
+      >
         {/* Tema de colores: se cambia para todos y se queda guardado para la próxima vez */}
         <div className="flex flex-wrap items-center gap-2">
           <label className="flex items-center gap-2 text-sm text-zinc-400">
             Tema:
-            <select
-              className="rounded-lg border border-zinc-700 bg-zinc-900 px-2 py-1.5 text-sm text-zinc-100"
-              value={theme}
-              onChange={(e) => onTheme(e.target.value as RoomTheme)}
-            >
+            <select className="select" value={theme} onChange={(e) => onTheme(e.target.value as RoomTheme)}>
               <option value="normal">Normal (oscuro)</option>
               <option value="fiamma">Fiamma 🌸 (rosita)</option>
             </select>
@@ -679,10 +721,10 @@ export function HostPanel({ guests, theme, onTheme, fiesta, onFiesta }: Props) {
               const err = await onFiesta(!fiesta);
               if (err) setMessage(err);
             }}
-            className={`rounded-full px-4 py-1.5 text-sm font-bold transition ${
+            className={`rounded-full px-4 py-2 text-sm font-semibold transition active:scale-95 ${
               fiesta
-                ? 'bg-pink-500 text-white hover:bg-pink-600'
-                : 'bg-zinc-800 text-zinc-300 hover:bg-zinc-700'
+                ? 'bg-linear-to-r from-pink-500 to-fuchsia-500 text-white shadow-lg shadow-pink-500/25 hover:brightness-110'
+                : 'border border-zinc-700/70 bg-zinc-800/80 text-zinc-200 hover:bg-zinc-700/80'
             }`}
           >
             {fiesta ? '🎉 Modo fiesta: activado' : '🎂 Activar modo fiesta'}
@@ -706,14 +748,24 @@ export function HostPanel({ guests, theme, onTheme, fiesta, onFiesta }: Props) {
       </section>
 
       {noAudio && (
-        <p className="rounded-lg bg-amber-950/60 px-3 py-2 text-sm text-amber-200">
+        <p className="animate-scale-in rounded-xl border border-amber-500/20 bg-amber-950/50 px-4 py-3 text-sm text-amber-200">
           No se está compartiendo audio. Vuelve a compartir y activa “Compartir audio de la pestaña”.
         </p>
       )}
-      {message && <p className="rounded-lg bg-red-950/60 px-3 py-2 text-sm text-red-300">{message}</p>}
+      {message && (
+        <p
+          role="alert"
+          className="animate-scale-in rounded-xl border border-red-500/20 bg-red-950/50 px-4 py-3 text-sm text-red-300"
+        >
+          {message}
+        </p>
+      )}
 
       {/* Vista previa local (silenciada para no oír eco) */}
-      <div className="overflow-hidden rounded-xl border border-zinc-800 bg-black">
+      <div
+        className="animate-fade-up overflow-hidden rounded-2xl border border-zinc-800/80 bg-black shadow-2xl shadow-black/30"
+        style={{ animationDelay: '210ms' }}
+      >
         <div className="relative aspect-video">
           <video
             ref={previewRef}
@@ -723,12 +775,38 @@ export function HostPanel({ guests, theme, onTheme, fiesta, onFiesta }: Props) {
             className="absolute inset-0 size-full object-contain"
           />
           {!sharing && (
-            <p className="absolute inset-0 grid place-items-center p-4 text-center text-sm text-zinc-500">
+            <p className="absolute inset-0 flex flex-col items-center justify-center gap-3 p-4 text-center text-sm text-zinc-500">
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth={1.5}
+                className="size-10 text-zinc-700"
+                aria-hidden
+              >
+                <rect x="3" y="4" width="18" height="13" rx="2" />
+                <path d="M8 21h8M12 17v4" strokeLinecap="round" />
+              </svg>
               Aquí verás una vista previa de lo que compartes
             </p>
+          )}
+          {sharing && (
+            <span className="animate-fade-in absolute top-3 left-3 flex items-center gap-1.5 rounded-full bg-red-600/90 px-2.5 py-1 text-[11px] font-bold tracking-wide text-white shadow-lg">
+              <span className="size-1.5 animate-pulse rounded-full bg-white" />
+              EN VIVO
+            </span>
           )}
         </div>
       </div>
     </div>
+  );
+}
+
+/** Número de paso en un círculo (1, 2…). */
+function StepBadge({ n }: { n: number }) {
+  return (
+    <span className="grid size-6 shrink-0 place-items-center rounded-full bg-violet-500/15 text-xs font-bold text-violet-400 ring-1 ring-violet-500/30">
+      {n}
+    </span>
   );
 }
