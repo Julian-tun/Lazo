@@ -95,19 +95,60 @@ export const QUALITY: Record<Quality, { label: string; width: number; height: nu
     alta: { label: 'Alta (1080p)', width: 1920, height: 1080, maxBitrate: 5_000_000 },
   };
 
-/** Límites de captura para la pestaña compartida según la calidad elegida. */
+// ---- Tipo de contenido que se comparte ----
+// Le dice a Chrome qué cuidar más cuando falta red o compu:
+// - Película: la FLUIDEZ (30 fps). Si falta red, baja un poco la nitidez.
+// - Página / texto: la NITIDEZ (letras legibles). Si falta red, baja los fps.
+export type ContentType = 'pelicula' | 'texto';
+export type Degradation = 'balanced' | 'maintain-framerate' | 'maintain-resolution';
+
+export const CONTENT: Record<ContentType, { label: string; hint: string; degradation: Degradation }> = {
+  pelicula: { label: 'Película / video', hint: 'motion', degradation: 'maintain-framerate' },
+  texto: { label: 'Página / texto', hint: 'detail', degradation: 'maintain-resolution' },
+};
+
+/**
+ * Límites de captura para la pestaña compartida según la calidad elegida.
+ * "ideal" le pide a Chrome que capture a ese tamaño y a 30 fps (no solo que no se pase).
+ */
 export function captureConstraints(q: Quality): MediaTrackConstraints {
   const { width, height } = QUALITY[q];
-  return { width: { max: width }, height: { max: height }, frameRate: { max: 30 } };
+  return {
+    width: { ideal: width, max: width },
+    height: { ideal: height, max: height },
+    frameRate: { ideal: 30, max: 30 },
+  };
+}
+
+/**
+ * Prefiere el códec VP9 para el video de esta conexión: a la misma velocidad de red
+ * se ve más nítido que VP8. Los demás códecs quedan detrás, así que si el otro
+ * navegador no tiene VP9 se usa VP8 como siempre. Hay que llamarla ANTES de createOffer.
+ */
+export function preferVp9(pc: RTCPeerConnection): void {
+  const caps = RTCRtpReceiver.getCapabilities?.('video');
+  if (!caps) return;
+  // Orden: VP9 perfil 0 (el más compatible), luego otros VP9, luego el resto
+  const rank = (c: RTCRtpCodec) =>
+    c.mimeType.toLowerCase() !== 'video/vp9' ? 2 : /profile-id=0/.test(c.sdpFmtpLine ?? '') ? 0 : 1;
+  const codecs = [...caps.codecs].sort((a, b) => rank(a) - rank(b));
+  if (rank(codecs[0]) === 2) return; // este navegador no tiene VP9
+  for (const t of pc.getTransceivers()) {
+    if (t.sender.track?.kind !== 'video') continue;
+    try {
+      t.setCodecPreferences(codecs);
+    } catch (err) {
+      console.warn('[webrtc] no se pudo preferir VP9; se usa el códec por defecto', err);
+    }
+  }
 }
 
 /**
  * Ajusta cómo se envía el video a UN espectador:
  * - tope de velocidad según la calidad elegida;
- * - "balanced": si falta red o compu, baja un poco la fluidez Y un poco la nitidez,
- *   en vez de dejar la imagen muy pequeña.
+ * - qué cuidar si falta red o compu (fluidez o nitidez) según el tipo de contenido.
  */
-export async function tuneVideoSender(pc: RTCPeerConnection, q: Quality): Promise<void> {
+export async function tuneVideoSender(pc: RTCPeerConnection, q: Quality, c: ContentType): Promise<void> {
   for (const sender of pc.getSenders()) {
     if (sender.track?.kind !== 'video') continue;
     // degradationPreference aún no está en los tipos de TypeScript
@@ -115,7 +156,7 @@ export async function tuneVideoSender(pc: RTCPeerConnection, q: Quality): Promis
     if (!params.encodings?.length) continue;
     params.encodings[0].maxBitrate = QUALITY[q].maxBitrate;
     params.encodings[0].maxFramerate = 30;
-    params.degradationPreference = 'balanced';
+    params.degradationPreference = CONTENT[c].degradation;
     await sender
       .setParameters(params)
       .catch((err) => console.warn('[webrtc] no se pudo ajustar la calidad', err));
@@ -127,15 +168,18 @@ export async function tuneVideoSender(pc: RTCPeerConnection, q: Quality): Promis
  *
  * Al empezar, Chrome aún no sabe cuánta red hay y envía el video muy pequeño
  * (p. ej. 320x180 a 10 fps). A veces se queda ahí aunque luego sobre red.
- * Cambiar el modo y volver a "balanced" hace que vuelva a calcular (probado:
- * pasa a 1280x720 a 30 fps en ~2 s cuando hay red suficiente).
+ * Pasar un momento por "balanced" y volver al modo elegido hace que Chrome borre
+ * sus límites y vuelva a calcular (probado: pasa a 1280x720 a 30 fps en ~2 s
+ * cuando hay red suficiente).
  */
-export async function refreshAdaptation(pc: RTCPeerConnection): Promise<void> {
+export async function refreshAdaptation(pc: RTCPeerConnection, c: ContentType): Promise<void> {
+  const mode = CONTENT[c].degradation;
+  const temp: Degradation = mode === 'balanced' ? 'maintain-resolution' : 'balanced';
   for (const sender of pc.getSenders()) {
     if (sender.track?.kind !== 'video') continue;
-    for (const mode of ['maintain-resolution', 'balanced'] as const) {
-      const params = sender.getParameters();
-      params.degradationPreference = mode;
+    for (const m of [temp, mode]) {
+      const params = sender.getParameters() as RTCRtpSendParameters & { degradationPreference?: string };
+      params.degradationPreference = m;
       await sender
         .setParameters(params)
         .catch((err) => console.warn('[webrtc] no se pudo reiniciar la calidad', err));
@@ -150,30 +194,50 @@ export interface SendStats {
   timestamp: number; // ms
   limitedBy: 'cpu' | 'bandwidth' | 'other' | 'none';
   availableKbps: number | null; // red que Chrome calcula que hay disponible hacia ese espectador
+  codec: string | null; // p. ej. 'VP9' o 'VP8'
+  // Lo que Chrome CAPTURA de la pestaña (antes de enviarlo). Sirve para saber si
+  // el video sale chico desde el origen o si se achica al enviarlo.
+  sourceWidth: number | null;
+  sourceHeight: number | null;
+  sourceFps: number | null;
 }
 
 /** Cómo se está enviando el video por esta conexión ahora mismo. */
 export async function getSendStats(pc: RTCPeerConnection): Promise<SendStats | null> {
   const stats = await pc.getStats();
-  let out: SendStats | null = null;
   let availableKbps: number | null = null;
+  // RTCStats genéricos: TypeScript no conoce todos los campos de cada tipo
+  let outbound: Record<string, unknown> | undefined;
   stats.forEach((s) => {
     if (s.type === 'candidate-pair' && s.nominated && s.state === 'succeeded' && s.availableOutgoingBitrate) {
       availableKbps = Math.round(s.availableOutgoingBitrate / 1000);
     }
-    if (s.type === 'outbound-rtp' && s.kind === 'video') {
-      out = {
-        height: s.frameHeight ?? null,
-        fps: s.framesPerSecond ?? null,
-        bytesSent: s.bytesSent ?? 0,
-        timestamp: s.timestamp,
-        limitedBy: s.qualityLimitationReason ?? 'none',
-        availableKbps: null,
-      };
-    }
+    if (s.type === 'outbound-rtp' && s.kind === 'video') outbound = s;
   });
-  if (out) (out as SendStats).availableKbps = availableKbps;
-  return out;
+  if (!outbound) return null;
+  const o = outbound as {
+    frameHeight?: number;
+    framesPerSecond?: number;
+    bytesSent?: number;
+    timestamp: number;
+    qualityLimitationReason?: SendStats['limitedBy'];
+    codecId?: string;
+    mediaSourceId?: string;
+  };
+  const codec = o.codecId ? (stats.get(o.codecId)?.mimeType as string | undefined) : undefined;
+  const source = o.mediaSourceId ? stats.get(o.mediaSourceId) : undefined;
+  return {
+    height: o.frameHeight ?? null,
+    fps: o.framesPerSecond ?? null,
+    bytesSent: o.bytesSent ?? 0,
+    timestamp: o.timestamp,
+    limitedBy: o.qualityLimitationReason ?? 'none',
+    availableKbps,
+    codec: codec ? codec.replace(/^video\//i, '') : null,
+    sourceWidth: source?.width ?? null,
+    sourceHeight: source?.height ?? null,
+    sourceFps: source?.framesPerSecond ?? null,
+  };
 }
 
 export type Route = 'direct' | 'relay';

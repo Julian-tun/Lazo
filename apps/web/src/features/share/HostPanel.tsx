@@ -4,14 +4,17 @@ import type { Participant } from '@lazo/shared';
 import { socket } from '../../lib/socket';
 import {
   captureConstraints,
+  CONTENT,
   createPeerLink,
   getIceConfig,
   getRoute,
   getSendStats,
   newCallId,
+  preferVp9,
   refreshAdaptation,
   QUALITY,
   tuneVideoSender,
+  type ContentType,
   type PeerLink,
   type Quality,
   type Route,
@@ -60,13 +63,24 @@ export function HostPanel({ guests, fiesta, onFiesta }: Props) {
   const [quality, setQuality] = useState<Quality>('normal');
   const qualityRef = useRef(quality);
   qualityRef.current = quality;
+  // Qué se comparte: película (cuidar fluidez) o página/texto (cuidar nitidez)
+  const [content, setContent] = useState<ContentType>('pelicula');
+  const contentRef = useRef(content); // se actualiza en changeContent
   // Calidad real que recibe cada espectador ahora mismo
   const [sendInfo, setSendInfo] = useState<
     Record<
       string,
-      { height: number | null; fps: number | null; kbps: number | null; limitedBy: SendStats['limitedBy'] }
+      {
+        height: number | null;
+        fps: number | null;
+        kbps: number | null;
+        limitedBy: SendStats['limitedBy'];
+        codec: string | null;
+      }
     >
   >({});
+  // Lo que Chrome captura de la pestaña (tamaño y cuadros por segundo)
+  const [capture, setCapture] = useState<{ width: number; height: number; fps: number | null } | null>(null);
   // Último conteo de bytes enviados, para calcular la velocidad (kbps)
   const lastBytesRef = useRef(new Map<string, { bytes: number; at: number }>());
   // Última vez que el "guardián" reinició la calidad de cada espectador
@@ -124,12 +138,13 @@ export function HostPanel({ guests, fiesta, onFiesta }: Props) {
       link.pc.onconnectionstatechange = () => setPeerState(guestId, link.pc.connectionState);
 
       for (const track of s.getTracks()) link.pc.addTrack(track, s);
+      preferVp9(link.pc); // más nitidez con la misma red (si el espectador no tiene VP9, queda VP8)
 
       try {
         const offer = await link.pc.createOffer();
         if (linksRef.current.get(guestId) !== link) return; // mientras tanto empezó otro intento
         await link.pc.setLocalDescription(offer);
-        await tuneVideoSender(link.pc, qualityRef.current); // tope de calidad + modo equilibrado
+        await tuneVideoSender(link.pc, qualityRef.current, contentRef.current); // tope de calidad + qué cuidar
         socket.emit('webrtc:offer', { to: guestId, callId, sdp: offer });
       } catch (err) {
         console.error('[host] error creando la oferta', err);
@@ -200,6 +215,7 @@ export function HostPanel({ guests, fiesta, onFiesta }: Props) {
     const timer = setInterval(async () => {
       const nextRoutes: Record<string, Route> = {};
       const nextInfo: typeof sendInfo = {};
+      let nextCapture: typeof capture = null;
       for (const [id, link] of linksRef.current) {
         if (link.pc.connectionState !== 'connected') continue;
         const route = await getRoute(link.pc).catch(() => null);
@@ -214,26 +230,39 @@ export function HostPanel({ guests, fiesta, onFiesta }: Props) {
             ? Math.round(((s.bytesSent - last.bytes) * 8) / (s.timestamp - last.at))
             : null;
         lastBytesRef.current.set(id, { bytes: s.bytesSent, at: s.timestamp });
-        nextInfo[id] = { height: s.height, fps: s.fps, kbps, limitedBy: s.limitedBy };
+        nextInfo[id] = { height: s.height, fps: s.fps, kbps, limitedBy: s.limitedBy, codec: s.codec };
+        if (!nextCapture && s.sourceWidth && s.sourceHeight)
+          nextCapture = { width: s.sourceWidth, height: s.sourceHeight, fps: s.sourceFps };
 
-        // Guardián: si dice "limitado por la red" pero sobra red (3 veces lo que envía y al menos 1 Mbps),
-        // es que Chrome se quedó atascado en la calidad baja del inicio: lo reiniciamos.
+        // Guardián: Chrome a veces se queda atascado en la calidad baja del inicio. Lo reiniciamos si:
+        // a) dice "limitado por la red" pero sobra red (3 veces lo que envía y al menos 1 Mbps), o
+        // b) NO dice que haya límite, pero envía menos de la mitad del alto que captura.
         // Como mucho una vez cada 15 s por espectador. Si la red de verdad es mala, no hace nada.
         const lastFix = lastFixRef.current.get(id) ?? 0;
-        if (
+        const stuckByNetwork =
           s.limitedBy === 'bandwidth' &&
           kbps !== null &&
           s.availableKbps !== null &&
           s.availableKbps >= 1000 &&
-          s.availableKbps > kbps * 3 &&
-          Date.now() - lastFix > 15_000
-        ) {
+          s.availableKbps > kbps * 3;
+        const stuckForNoReason =
+          s.limitedBy === 'none' &&
+          s.height !== null &&
+          s.sourceHeight !== null &&
+          s.height < s.sourceHeight * 0.5;
+        if ((stuckByNetwork || stuckForNoReason) && Date.now() - lastFix > 15_000) {
           lastFixRef.current.set(id, Date.now());
-          void refreshAdaptation(link.pc);
+          void refreshAdaptation(link.pc, contentRef.current);
         }
+      }
+      // Sin espectadores conectados: lo que Chrome dice de la captura (sin fps reales)
+      if (!nextCapture) {
+        const set = streamRef.current?.getVideoTracks()[0]?.getSettings();
+        if (set?.width && set.height) nextCapture = { width: set.width, height: set.height, fps: null };
       }
       setRoutes(nextRoutes);
       setSendInfo(nextInfo);
+      setCapture(nextCapture);
     }, 4000);
     return () => clearInterval(timer);
   }, []);
@@ -244,7 +273,16 @@ export function HostPanel({ guests, fiesta, onFiesta }: Props) {
     const video = streamRef.current?.getVideoTracks()[0];
     if (video)
       await video.applyConstraints(captureConstraints(q)).catch((e) => console.warn('[host] calidad', e));
-    for (const link of linksRef.current.values()) await tuneVideoSender(link.pc, q);
+    for (const link of linksRef.current.values()) await tuneVideoSender(link.pc, q, contentRef.current);
+  }
+
+  /** Cambia el tipo de contenido (película o texto). Se puede cambiar mientras se comparte. */
+  async function changeContent(c: ContentType) {
+    setContent(c);
+    contentRef.current = c;
+    const video = streamRef.current?.getVideoTracks()[0];
+    if (video) video.contentHint = CONTENT[c].hint;
+    for (const link of linksRef.current.values()) await tuneVideoSender(link.pc, qualityRef.current, c);
   }
 
   // Vista previa local de lo que se comparte
@@ -259,6 +297,7 @@ export function HostPanel({ guests, fiesta, onFiesta }: Props) {
     streamRef.current?.getTracks().forEach((t) => t.stop());
     setStream(null);
     setNoAudio(false);
+    setCapture(null);
     socket.emit('webrtc:stop');
   }, []);
 
@@ -287,7 +326,7 @@ export function HostPanel({ guests, fiesta, onFiesta }: Props) {
       const s = await navigator.mediaDevices.getDisplayMedia(options);
       const video = s.getVideoTracks()[0];
       if (video) {
-        video.contentHint = 'motion'; // prioriza fluidez (ideal para videos)
+        video.contentHint = CONTENT[contentRef.current].hint; // fluidez (película) o nitidez (texto)
         // Si el usuario pulsa "Dejar de compartir" en la barra de Chrome
         video.addEventListener('ended', stopShare);
       }
@@ -367,7 +406,36 @@ export function HostPanel({ guests, fiesta, onFiesta }: Props) {
               ))}
             </select>
           </label>
+          {/* Qué se comparte: decide si se cuida la fluidez o la nitidez cuando falta red */}
+          <label className="flex items-center gap-1.5 text-sm text-zinc-300">
+            Contenido:
+            <select
+              className="rounded-lg border border-zinc-800 bg-zinc-900 px-2 py-1 text-sm"
+              value={content}
+              onChange={(e) => void changeContent(e.target.value as ContentType)}
+            >
+              {(Object.keys(CONTENT) as ContentType[]).map((c) => (
+                <option key={c} value={c}>
+                  {CONTENT[c].label}
+                </option>
+              ))}
+            </select>
+          </label>
         </div>
+        {/* Lo que Chrome captura de la pestaña: si aquí ya sale chico o lento, el problema es la captura */}
+        {sharing && capture && (
+          <p className="text-xs text-zinc-500">
+            Captura: {capture.width}x{capture.height}
+            {capture.fps !== null && ` ${Math.round(capture.fps)}fps`}
+            {capture.fps !== null && capture.fps < 15 && (
+              <span className="text-amber-300">
+                {' '}
+                · ⚠ Chrome captura pocos cuadros: deja la pestaña compartida a la vista y la compu conectada a
+                la corriente
+              </span>
+            )}
+          </p>
+        )}
         {sharing &&
           (guests.length === 0 ? (
             <p className="text-xs text-zinc-400">Esperando a que entren espectadores…</p>
@@ -399,6 +467,7 @@ export function HostPanel({ guests, fiesta, onFiesta }: Props) {
                         {` · ${info.height}p`}
                         {info.fps ? ` ${Math.round(info.fps)}fps` : ''}
                         {info.kbps !== null ? ` ${(info.kbps / 1000).toFixed(1)} Mbps` : ''}
+                        {info.codec ? ` ${info.codec}` : ''}
                       </span>
                     )}
                     {info?.limitedBy === 'cpu' && (
