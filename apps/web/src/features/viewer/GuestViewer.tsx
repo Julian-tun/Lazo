@@ -382,15 +382,28 @@ export function GuestViewer({ meId, hostId, overlay }: Props) {
             title="Calidad del video"
             aria-label="Calidad del video"
             aria-expanded={qualityOpen}
-            className="absolute top-2 left-2 z-20 rounded-lg bg-black/50 px-2 py-1 text-sm text-white/80 hover:bg-black/70"
+            className="absolute top-2 left-2 z-20 rounded-lg bg-black/50 p-1.5 text-white/85 hover:bg-black/70 phone-land:p-2"
           >
-            ⚙
+            {/* Engranaje dibujado (el emoji ⚙ sale muy chiquito en Android); más grande en horizontal */}
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth={2}
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              className="size-5 phone-land:size-7"
+              aria-hidden="true"
+            >
+              <circle cx="12" cy="12" r="3" />
+              <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
+            </svg>
           </button>
           {qualityOpen && (
             <div
               role="menu"
               aria-label="Opciones de calidad"
-              className="absolute top-10 left-2 z-30 flex flex-col overflow-hidden rounded-lg bg-zinc-900/95 py-1 text-sm text-white shadow-xl shadow-black/50"
+              className="absolute top-11 left-2 z-30 phone-land:top-14 flex flex-col overflow-hidden rounded-lg bg-zinc-900/95 py-1 text-sm text-white shadow-xl shadow-black/50"
             >
               {(['auto', 'f', 'h', 'q'] as Choice[]).map((c) => (
                 <button

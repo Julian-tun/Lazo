@@ -42,14 +42,6 @@ export default function Room() {
     applyTheme(roomTheme);
     saveTheme(roomTheme);
   }, [isHost, roomTheme]);
-  const [chatOpen, setChatOpen] = useState(false); // solo se usa en celular horizontal
-  const [seen, setSeen] = useState(0);
-
-  // Mensajes sin leer mientras el chat flotante está cerrado
-  useEffect(() => {
-    if (chatOpen) setSeen(room.messages.length);
-  }, [chatOpen, room.messages.length]);
-  const unread = Math.max(0, room.messages.length - seen);
 
   function leave() {
     room.leave();
@@ -132,7 +124,7 @@ export default function Room() {
 
   // ---------- INVITADO ----------
   // Celular vertical: video arriba (16:9) y chat abajo.
-  // Celular horizontal: video a pantalla completa y chat flotante con botón.
+  // Celular horizontal: video a pantalla completa y chat encima del video (botón 💬).
   // PC (lg): video grande y chat a la derecha.
   return (
     <div className="flex h-dvh flex-col">
@@ -144,35 +136,22 @@ export default function Room() {
           <GuestViewer
             meId={me.id}
             hostId={host?.id ?? null}
-            // Chat sobre el video: siempre en pantalla completa; en horizontal solo si el chat lateral está cerrado
+            // Chat sobre el video (botón 💬): en pantalla completa y en celular horizontal
             overlay={(isFullscreen) => (
               <ChatOverlay
                 messages={room.messages}
                 meId={me.id}
                 onSend={room.sendMessage}
-                className={isFullscreen ? 'contents' : `hidden ${chatOpen ? '' : 'phone-land:contents'}`}
+                className={isFullscreen ? 'contents' : 'hidden phone-land:contents'}
               />
             )}
           />
         </section>
 
-        <aside
-          className={`flex min-h-0 flex-1 flex-col border-t border-zinc-800 lg:w-96 lg:flex-none lg:border-t-0 lg:border-l phone-land:fixed phone-land:top-0 phone-land:right-0 phone-land:bottom-0 phone-land:z-10 phone-land:w-72 phone-land:border-0 phone-land:bg-zinc-950/60 phone-land:backdrop-blur-sm ${
-            chatOpen ? '' : 'phone-land:hidden'
-          }`}
-        >
+        {/* Chat de abajo (vertical) o a la derecha (PC). En horizontal se usa el 💬 sobre el video. */}
+        <aside className="flex min-h-0 flex-1 flex-col border-t border-zinc-800 lg:w-96 lg:flex-none lg:border-t-0 lg:border-l phone-land:hidden">
           <ChatPanel className="flex-1" messages={room.messages} meId={me.id} onSend={room.sendMessage} />
         </aside>
-
-        {/* Botón para mostrar/ocultar el chat (solo celular horizontal) */}
-        <button
-          onClick={() => setChatOpen((v) => !v)}
-          className={`fixed top-2 z-20 hidden rounded-full bg-black/60 px-3 py-1.5 text-sm text-white phone-land:block ${
-            chatOpen ? 'right-74' : 'right-2'
-          }`}
-        >
-          {chatOpen ? 'Ocultar chat ›' : `‹ Chat${unread ? ` (${unread})` : ''}`}
-        </button>
       </main>
     </div>
   );

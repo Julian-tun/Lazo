@@ -75,7 +75,7 @@ Android (Chrome) y/o iPhone (Safari):
 - [ ] **Vertical:** video arriba en 16:9 y chat abajo; el teclado no tapa la caja de texto.
 - [ ] **Activar sonido** funciona y se oye.
 - [ ] **Horizontal:** el video ocupa toda la pantalla; el chat está oculto.
-  - [ ] El botón **‹ Chat** lo muestra como capa semitransparente a la derecha; **Ocultar chat ›** lo esconde.
+  - [ ] Hay un solo botón de chat: el 💬 abajo a la izquierda (ya no hay "‹ Chat" arriba a la derecha). Abre el chat sobre el video.
   - [ ] Con el chat cerrado, el botón muestra cuántos mensajes nuevos hay.
 - [ ] El botón ⛶ (abajo a la derecha) pone el video en pantalla completa (en iPhone usa el reproductor del sistema).
 - [ ] **Avisos de mensajes:** en pantalla completa (o en horizontal con el chat cerrado), un mensaje del
