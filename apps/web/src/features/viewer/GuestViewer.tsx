@@ -331,27 +331,68 @@ export function GuestViewer({ meId, hostId, overlay }: Props) {
   }
 
   return (
+    // Todo lo que va encima del video usa colores fijos (blanco sobre oscuro), no los del tema:
+    // el video siempre tiene fondo negro y así se lee bien también con el tema Fiamma.
     <div ref={boxRef} className="relative size-full bg-black">
       <video
         ref={videoRef}
         autoPlay
         playsInline
         muted={muted}
-        className="absolute inset-0 size-full object-contain"
+        className={`absolute inset-0 size-full object-contain transition-opacity duration-700 ${
+          status === 'live' ? 'opacity-100' : 'opacity-0'
+        }`}
       />
 
       {status !== 'live' && (
-        <div className="absolute inset-0 grid place-items-center p-6 text-center">
-          <div className="flex flex-col items-center gap-3 text-sm text-zinc-400">
-            {status === 'waiting' &&
-              (hostId
-                ? 'Esperando a que el anfitrión comparta su pestaña…'
-                : 'El anfitrión no está en la sala')}
-            {status === 'connecting' && 'Conectando video…'}
+        // key = status: al cambiar de estado, el aviso nuevo aparece con animación
+        <div
+          key={status}
+          className="animate-fade-in absolute inset-0 grid place-items-center p-6 text-center"
+        >
+          <div className="flex flex-col items-center gap-4 text-sm text-white/70">
+            {status === 'waiting' && (
+              <>
+                <span className="animate-float grid size-14 place-items-center rounded-2xl bg-white/5 ring-1 ring-white/10">
+                  <svg
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth={1.5}
+                    className="size-7"
+                    aria-hidden
+                  >
+                    <rect x="3" y="5" width="18" height="12" rx="2" />
+                    <path d="M8 21h8M12 17v4M10 9.5v3l2.6-1.5L10 9.5Z" strokeLinejoin="round" />
+                  </svg>
+                </span>
+                {hostId
+                  ? 'Esperando a que el anfitrión comparta su pestaña…'
+                  : 'El anfitrión no está en la sala'}
+                <Dots />
+              </>
+            )}
+            {status === 'connecting' && (
+              <>
+                <span
+                  aria-hidden
+                  className="size-10 animate-spin rounded-full border-[3px] border-white/15 border-t-violet-400"
+                />
+                Conectando video…
+              </>
+            )}
             {status === 'failed' && (
               <>
+                <span className="grid size-12 place-items-center rounded-full bg-red-500/15 text-red-400 ring-1 ring-red-500/30">
+                  <svg viewBox="0 0 20 20" fill="currentColor" className="size-6" aria-hidden>
+                    <path d="M10 2a8 8 0 1 1 0 16 8 8 0 0 1 0-16Zm0 4a1 1 0 0 0-1 1v3.5a1 1 0 1 0 2 0V7a1 1 0 0 0-1-1Zm0 8.5A1.1 1.1 0 1 0 10 12.3a1.1 1.1 0 0 0 0 2.2Z" />
+                  </svg>
+                </span>
                 <span className="text-red-300">No se pudo conectar el video.</span>
-                <button className="btn-secondary text-sm" onClick={() => socket.emit('webrtc:request')}>
+                <button
+                  className="rounded-full bg-white/10 px-5 py-2 font-medium text-white ring-1 ring-white/15 transition hover:bg-white/20 active:scale-95"
+                  onClick={() => socket.emit('webrtc:request')}
+                >
                   Reintentar
                 </button>
               </>
@@ -363,9 +404,24 @@ export function GuestViewer({ meId, hostId, overlay }: Props) {
       {status === 'live' && muted && (
         <button
           onClick={unmute}
-          className="absolute inset-x-0 bottom-6 mx-auto w-fit rounded-full bg-violet-600 px-6 py-4 text-lg font-bold text-white shadow-xl shadow-black/50 hover:bg-violet-500"
+          className="animate-pop-in absolute inset-x-0 bottom-6 isolate mx-auto flex w-fit items-center gap-2.5 rounded-full bg-linear-to-b from-violet-500 to-violet-600 px-6 py-3.5 text-lg font-bold text-white shadow-lg shadow-black/40 ring-1 ring-white/20 transition hover:brightness-110 active:scale-95"
         >
-          🔊 Activar sonido
+          {/* Halo que late para llamar la atención */}
+          <span
+            aria-hidden
+            className="animate-glow absolute -inset-1 -z-10 rounded-full bg-violet-500/50 blur-md"
+          />
+          <svg viewBox="0 0 24 24" fill="currentColor" className="size-6" aria-hidden>
+            <path d="M11 5 6 9H3v6h3l5 4V5Z" />
+            <path
+              d="M15.5 8.5a5 5 0 0 1 0 7M18.5 5.5a9 9 0 0 1 0 13"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth={2}
+              strokeLinecap="round"
+            />
+          </svg>
+          Activar sonido
         </button>
       )}
 
@@ -377,14 +433,29 @@ export function GuestViewer({ meId, hostId, overlay }: Props) {
           onClick={fullscreen}
           title="Pantalla completa"
           aria-label="Pantalla completa"
-          className="absolute right-2 bottom-2 rounded-lg bg-black/50 px-2 py-1 text-sm text-white/80 hover:bg-black/70"
+          className="glass-btn animate-fade-in absolute right-3 bottom-3 size-11"
         >
-          ⛶
+          <svg
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth={2}
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            className="size-5 phone-land:size-6"
+            aria-hidden
+          >
+            {isFullscreen ? (
+              <path d="M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5" />
+            ) : (
+              <path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5" />
+            )}
+          </svg>
         </button>
       )}
 
-      {/* Calidad del video (solo si llega por Cloudflare): un botón chiquito ⚙ que al tocarlo
-          muestra las opciones. Auto la ajusta según tu internet. */}
+      {/* Calidad del video (solo si llega por Cloudflare): un botón ⚙ que al tocarlo muestra las
+          opciones. Auto la ajusta según tu internet. */}
       {status === 'live' && via === 'sfu' && (
         <div ref={qualityRef}>
           <button
@@ -392,9 +463,10 @@ export function GuestViewer({ meId, hostId, overlay }: Props) {
             title="Calidad del video"
             aria-label="Calidad del video"
             aria-expanded={qualityOpen}
-            className="absolute top-2 left-2 z-20 rounded-lg bg-black/50 p-1.5 text-white/85 hover:bg-black/70 phone-land:p-2"
+            className={`glass-btn animate-fade-in absolute top-3 left-3 z-20 size-11 ${qualityOpen ? 'bg-black/70' : ''}`}
           >
-            {/* Engranaje dibujado (el emoji ⚙ sale muy chiquito en Android); más grande en horizontal */}
+            {/* Engranaje dibujado (el emoji ⚙ sale muy chiquito en Android); más grande en horizontal.
+                Gira un poco al abrir las opciones. */}
             <svg
               viewBox="0 0 24 24"
               fill="none"
@@ -402,7 +474,7 @@ export function GuestViewer({ meId, hostId, overlay }: Props) {
               strokeWidth={2}
               strokeLinecap="round"
               strokeLinejoin="round"
-              className="size-5 phone-land:size-7"
+              className={`size-5 transition-transform duration-300 phone-land:size-6 ${qualityOpen ? 'rotate-90' : ''}`}
               aria-hidden="true"
             >
               <circle cx="12" cy="12" r="3" />
@@ -413,8 +485,11 @@ export function GuestViewer({ meId, hostId, overlay }: Props) {
             <div
               role="menu"
               aria-label="Opciones de calidad"
-              className="absolute top-11 left-2 z-30 phone-land:top-14 flex flex-col overflow-hidden rounded-lg bg-zinc-900/95 py-1 text-sm text-white shadow-xl shadow-black/50"
+              className="animate-scale-in absolute top-16 left-3 z-30 flex min-w-44 origin-top-left flex-col rounded-xl bg-black/80 p-1.5 text-sm text-white shadow-2xl ring-1 ring-white/10 backdrop-blur-md"
             >
+              <span className="px-2.5 pt-1 pb-1.5 text-[11px] font-semibold tracking-wider text-white/45 uppercase">
+                Calidad
+              </span>
               {(['auto', 'f', 'h', 'q'] as Choice[]).map((c) => (
                 <button
                   key={c}
@@ -422,9 +497,11 @@ export function GuestViewer({ meId, hostId, overlay }: Props) {
                   aria-checked={choice === c}
                   data-value={c}
                   onClick={() => void chooseQuality(c)}
-                  className="flex items-center gap-2 px-3 py-1.5 text-left whitespace-nowrap hover:bg-white/10"
+                  className={`flex items-center gap-2 rounded-lg px-2.5 py-2 text-left whitespace-nowrap transition hover:bg-white/10 ${
+                    choice === c ? 'font-medium text-white' : 'text-white/75'
+                  }`}
                 >
-                  <span className="w-3">{choice === c ? '✓' : ''}</span>
+                  <span className="w-4 text-violet-300">{choice === c ? '✓' : ''}</span>
                   {c === 'auto'
                     ? `Auto · ${LAYER_LABEL[layer]}${recv?.height ? ` ${recv.height}p` : ''}`
                     : LAYER_LABEL[c]}
@@ -435,5 +512,20 @@ export function GuestViewer({ meId, hostId, overlay }: Props) {
         </div>
       )}
     </div>
+  );
+}
+
+/** Tres puntitos que saltan uno tras otro (esperando). */
+function Dots() {
+  return (
+    <span aria-hidden className="flex gap-1.5">
+      {[0, 1, 2].map((i) => (
+        <span
+          key={i}
+          className="size-1.5 animate-bounce rounded-full bg-white/40"
+          style={{ animationDelay: `${i * 150}ms` }}
+        />
+      ))}
+    </span>
   );
 }
