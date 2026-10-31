@@ -69,7 +69,7 @@ Lazo/  (carpeta E:\Lazo)
 │        ├─ pages/           Home.tsx (crear/unirse), Room.tsx (la sala)
 │        ├─ features/
 │        │  ├─ chat/         ChatPanel, ChatOverlay, ChatToasts
-│        │  ├─ fiesta/       modo fiesta (animaciones y música)
+│        │  ├─ fiesta/       tema Fiamma (rosita, se recuerda) y modo fiesta (canción y felicitaciones)
 │        │  ├─ room/         useRoom (estado de sala), RoomHeader
 │        │  ├─ share/        HostPanel (anfitrión: abrir link + compartir pestaña)
 │        │  └─ viewer/       GuestViewer (invitado: ver el stream)

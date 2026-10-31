@@ -4,8 +4,8 @@ import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import { MAX_NAME_LENGTH, type JoinedData } from '@lazo/shared';
 import { ChatPanel } from '../features/chat/ChatPanel';
 import { ChatOverlay } from '../features/chat/ChatOverlay';
-import { FIESTA_OFF, FIESTA_ON } from '../features/fiesta/fiesta';
 import { FiestaGarland, FiestaOverlay } from '../features/fiesta/FiestaOverlay';
+import { applyTheme, loadTheme, saveTheme } from '../features/fiesta/tema';
 import { useFiesta } from '../features/fiesta/useFiesta';
 import { RoomHeader } from '../features/room/RoomHeader';
 import { useRoom } from '../features/room/useRoom';
@@ -22,8 +22,26 @@ export default function Room() {
 
   const room = useRoom(code, initial);
   const connection = useConnectionState();
-  // Modo fiesta 🎂 (solo diseño): se activa con un mensaje especial del anfitrión en el chat
-  const fiesta = useFiesta(room.messages, room.participants);
+  // Modo fiesta 🎂 (canción y felicitaciones): lo activa el anfitrión y lo guarda el servidor
+  const fiesta = useFiesta(room.look?.party ?? false);
+
+  // Tema de colores (normal o rosita). El del anfitrión manda y se recuerda en su navegador.
+  const isHost = room.me?.role === 'host';
+  const roomTheme = room.look?.theme;
+  const { changeLook } = room;
+  const [myTheme, setMyTheme] = useState(loadTheme);
+  // Anfitrión: usa su tema guardado; si la sala tiene otro, se lo pasa a todos
+  useEffect(() => {
+    if (!isHost || !roomTheme) return;
+    applyTheme(myTheme);
+    if (roomTheme !== myTheme) void changeLook({ theme: myTheme });
+  }, [isHost, myTheme, roomTheme, changeLook]);
+  // Invitado: ve el tema de la sala y lo recuerda para la próxima vez
+  useEffect(() => {
+    if (isHost || !roomTheme) return;
+    applyTheme(roomTheme);
+    saveTheme(roomTheme);
+  }, [isHost, roomTheme]);
   const [chatOpen, setChatOpen] = useState(false); // solo se usa en celular horizontal
   const [seen, setSeen] = useState(0);
 
@@ -94,8 +112,13 @@ export default function Room() {
             <div className="mx-auto max-w-3xl">
               <HostPanel
                 guests={guests}
+                theme={myTheme}
+                onTheme={(t) => {
+                  saveTheme(t);
+                  setMyTheme(t);
+                }}
                 fiesta={fiesta.active}
-                onFiesta={(on) => room.sendMessage(on ? FIESTA_ON : FIESTA_OFF)}
+                onFiesta={(on) => room.changeLook({ party: on })}
               />
             </div>
           </section>

@@ -1,15 +1,9 @@
-// Hook del modo fiesta: tema rosita, animación de bienvenida y música.
+// Hook del modo fiesta: animación de felicitaciones y música.
+// "active" viene de la sala (lo guarda el servidor), así no se apaga solo.
 import { useCallback, useEffect, useRef, useState } from 'react';
-import type { ChatMessage, Participant } from '@lazo/shared';
-import { isFiestaActive, MUSICA_URL } from './fiesta';
+import { MUSICA_URL } from './fiesta';
 
-export function useFiesta(messages: ChatMessage[], participants: Participant[]) {
-  // Recordamos el nombre del último anfitrión visto (si se reconecta, no se apaga la fiesta)
-  const hostNameRef = useRef<string | null>(null);
-  const host = participants.find((p) => p.role === 'host');
-  if (host) hostNameRef.current = host.name;
-
-  const active = isFiestaActive(messages, hostNameRef.current);
+export function useFiesta(active: boolean) {
   const [showIntro, setShowIntro] = useState(false);
   // true si el navegador no dejó sonar la música solo y hay que tocar un botón
   const [needsTap, setNeedsTap] = useState(false);
@@ -21,14 +15,6 @@ export function useFiesta(messages: ChatMessage[], participants: Participant[]) 
     if (active && !wasActive.current) setShowIntro(true);
     if (!active) setShowIntro(false);
     wasActive.current = active;
-  }, [active]);
-
-  // Tema rosita: una clase en <html> cambia los colores de toda la app (ver fiesta.css)
-  useEffect(() => {
-    document.documentElement.classList.toggle('fiesta', active);
-    const meta = document.querySelector('meta[name="theme-color"]');
-    meta?.setAttribute('content', active ? '#ffd6e8' : '#09090b');
-    return () => document.documentElement.classList.remove('fiesta');
   }, [active]);
 
   const playMusic = useCallback(async () => {

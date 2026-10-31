@@ -1,12 +1,14 @@
 // Hook con el estado de la sala: quién soy, quién está y los mensajes.
 import { useCallback, useEffect, useRef, useState } from 'react';
-import type { ChatMessage, JoinedData, Participant } from '@lazo/shared';
+import type { ChatMessage, JoinedData, Participant, RoomLook } from '@lazo/shared';
 import { ACK_TIMEOUT_MS, clearSession, loadSession, saveSession, socket } from '../../lib/socket';
 
 export function useRoom(code: string, initial: JoinedData | null) {
   const [me, setMe] = useState<Participant | null>(initial?.me ?? null);
   const [participants, setParticipants] = useState<Participant[]>(initial?.participants ?? []);
   const [messages, setMessages] = useState<ChatMessage[]>(initial?.history ?? []);
+  // Tema y modo fiesta de la sala (los decide el anfitrión)
+  const [look, setLook] = useState<RoomLook | null>(initial?.look ?? null);
   const [error, setError] = useState<string | null>(null);
 
   // Guardamos en refs lo que necesitan los listeners de socket sin re-registrarse.
@@ -29,6 +31,7 @@ export function useRoom(code: string, initial: JoinedData | null) {
         setMe(r.data.me);
         setParticipants(r.data.participants);
         setMessages(r.data.history);
+        setLook(r.data.look);
         setError(null);
         return true;
       } catch {
@@ -55,11 +58,13 @@ export function useRoom(code: string, initial: JoinedData | null) {
 
     socket.on('presence', onPresence);
     socket.on('chat:message', onMessage);
+    socket.on('room:look', setLook);
     socket.on('connect', ensureJoined);
     ensureJoined();
     return () => {
       socket.off('presence', onPresence);
       socket.off('chat:message', onMessage);
+      socket.off('room:look', setLook);
       socket.off('connect', ensureJoined);
     };
   }, [code, join]);
@@ -80,8 +85,18 @@ export function useRoom(code: string, initial: JoinedData | null) {
     }
   }, []);
 
+  /** (Solo anfitrión) cambia el tema o el modo fiesta para todos. Devuelve error o null. */
+  const changeLook = useCallback(async (p: Partial<RoomLook>): Promise<string | null> => {
+    try {
+      const r = await socket.timeout(ACK_TIMEOUT_MS).emitWithAck('room:look', p);
+      return r.ok ? null : r.error;
+    } catch {
+      return 'No se pudo cambiar (sin conexión)';
+    }
+  }, []);
+
   // Estamos entrando solos (recarga o reconexión) y aún no hay respuesta
   const autoJoining = !me && !!nameRef.current && !error;
 
-  return { me, participants, messages, error, autoJoining, join, leave, sendMessage };
+  return { me, participants, messages, look, error, autoJoining, join, leave, sendMessage, changeLook };
 }

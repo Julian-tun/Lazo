@@ -1,0 +1,41 @@
+/* ============================================================
+   Tema "Fiamma" 🌸 (rosita kawaii). Solo se aplica cuando <html> tiene la clase
+   "tema-fiamma" (ver tema.ts). Sin esa clase, la app se ve con el tema normal.
+   ============================================================ */
+
+/* Redefinimos la paleta que usa toda la app:
+   La app usa "zinc" (fondos/textos) y "violet" (botones). Aquí los cambiamos a rosas,
+   del más claro (fondo) al más oscuro (texto). */
+html.tema-fiamma {
+  color-scheme: light;
+  --color-zinc-950: #fff0f6; /* fondo de la página */
+  --color-zinc-900: #ffe3ef; /* cajas de texto */
+  --color-zinc-800: #fcc8dc; /* bordes, botones secundarios */
+  --color-zinc-700: #f8a9c8; /* hover */
+  --color-zinc-600: #e27aa6;
+  --color-zinc-500: #c65a8a; /* textos suaves */
+  --color-zinc-400: #a8406f;
+  --color-zinc-300: #8a2d5a;
+  --color-zinc-200: #6e1f47;
+  --color-zinc-100: #5a1739; /* texto principal */
+
+  --color-violet-300: #f9a8d4; /* nombres en avisos sobre el video (fondo oscuro) */
+  --color-violet-400: #ec4899;
+  --color-violet-500: #ec4899; /* hover de botones */
+  --color-violet-600: #db2777; /* botones principales */
+
+  /* Colores de estado: más oscuros para que se lean sobre fondo claro */
+  --color-emerald-400: #059669;
+  --color-sky-300: #0369a1;
+  --color-amber-300: #b45309;
+  --color-amber-200: #92400e;
+  --color-amber-950: #fef3c7;
+  --color-red-300: #be123c;
+  --color-red-950: #ffe4e6;
+}
+
+html.tema-fiamma body {
+  font-family: 'Fredoka', ui-rounded, system-ui, sans-serif;
+  /* Corazoncitos muy suaves de fondo */
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='64' height='64'%3E%3Ctext x='8' y='24' font-size='14' opacity='.18'%3E%F0%9F%92%97%3C/text%3E%3Ctext x='38' y='56' font-size='12' opacity='.14'%3E%F0%9F%8C%B8%3C/text%3E%3C/svg%3E");
+}

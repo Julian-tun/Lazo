@@ -5,10 +5,12 @@ import {
   MAX_MESSAGE_LENGTH,
   MAX_NAME_LENGTH,
   ROOM_CODE_LENGTH,
+  ROOM_THEMES,
   SFU_LAYERS,
   type ClientToServerEvents,
   type JoinedData,
   type Participant,
+  type RoomTheme,
   type ServerToClientEvents,
   type SfuLayer,
 } from '@lazo/shared';
@@ -118,6 +120,7 @@ export function registerSocketHandlers(io: IO) {
       me: p,
       participants: listParticipants(room),
       history: room.history,
+      look: room.look,
     });
 
     const leave = () => {
@@ -198,6 +201,32 @@ export function registerSocketHandlers(io: IO) {
       const msg = { id: randomUUID(), fromId: me.id, name: me.name, text, at: now };
       addMessage(currentRoom, msg);
       io.to(currentRoom.code).emit('chat:message', msg);
+      reply({ ok: true });
+    });
+
+    // ---- Tema y modo fiesta (solo el anfitrión) ----
+    let lookTimes: number[] = [];
+    socket.on('room:look', (p, ack) => {
+      const reply = typeof ack === 'function' ? ack : () => {};
+      const room = currentRoom;
+      if (me?.role !== 'host' || !room)
+        return reply({ ok: false, error: 'Solo el anfitrión puede cambiarlo' });
+      const theme = p?.theme;
+      const party = p?.party;
+      if (theme !== undefined && !ROOM_THEMES.includes(theme as RoomTheme))
+        return reply({ ok: false, error: 'Tema no válido' });
+      if (party !== undefined && typeof party !== 'boolean')
+        return reply({ ok: false, error: 'Valor no válido' });
+
+      // Límite de frecuencia (mismos números que el chat)
+      const now = Date.now();
+      lookTimes = lookTimes.filter((t) => now - t < CHAT_WINDOW_MS);
+      if (lookTimes.length >= CHAT_MAX_IN_WINDOW)
+        return reply({ ok: false, error: 'Vas muy rápido, espera un momento' });
+      lookTimes.push(now);
+
+      room.look = { theme: theme ?? room.look.theme, party: party ?? room.look.party };
+      io.to(room.code).emit('room:look', room.look);
       reply({ ok: true });
     });
 

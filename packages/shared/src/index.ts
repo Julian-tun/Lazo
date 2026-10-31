@@ -34,11 +34,21 @@ export type Ack<T = undefined> =
   // eslint-disable-next-line @typescript-eslint/no-empty-object-type -- {} = "no agrega nada" (sin data)
   ({ ok: true } & (T extends undefined ? {} : { data: T })) | { ok: false; error: string };
 
+// Cómo se ve la sala para todos. Lo decide el anfitrión y lo guarda el servidor
+// (así no se pierde aunque el chat se llene de mensajes).
+export type RoomTheme = 'normal' | 'fiamma'; // fiamma = tema rosita 🌸
+export const ROOM_THEMES: readonly RoomTheme[] = ['normal', 'fiamma'];
+export interface RoomLook {
+  theme: RoomTheme;
+  party: boolean; // modo fiesta 🎂: canción, felicitaciones y guirnalda
+}
+
 export interface JoinedData {
   code: string;
   me: Participant;
   participants: Participant[];
   history: ChatMessage[];
+  look: RoomLook;
 }
 
 // Señalización WebRTC: el servidor solo reenvía estos datos al otro participante.
@@ -98,6 +108,8 @@ export interface ClientToServerEvents {
   'room:join': (p: { code: string; name: string }, ack: (r: Ack<JoinedData>) => void) => void;
   'room:leave': () => void;
   'chat:message': (p: { text: string }, ack: (r: Ack) => void) => void;
+  // (Solo anfitrión) cambia el tema y/o el modo fiesta para todos
+  'room:look': (p: Partial<RoomLook>, ack: (r: Ack) => void) => void;
   // El anfitrión tiene una conexión por invitado: "to" dice a qué invitado va.
   'webrtc:offer': (p: SignalOffer & { to: string }) => void;
   // El invitado siempre habla con el anfitrión (el servidor sabe quién es).
@@ -138,6 +150,8 @@ export interface ClientToServerEvents {
 export interface ServerToClientEvents {
   presence: (p: PresencePayload) => void;
   'chat:message': (m: ChatMessage) => void;
+  // El anfitrión cambió el tema o el modo fiesta
+  'room:look': (p: RoomLook) => void;
   'webrtc:offer': (p: SignalOffer & { fromId: string }) => void;
   'webrtc:answer': (p: SignalAnswer & { fromId: string }) => void;
   'webrtc:ice': (p: SignalIce & { fromId: string }) => void;

@@ -4,6 +4,7 @@ import {
   MAX_PEOPLE_PER_ROOM,
   ROOM_CODE_LENGTH,
   type ChatMessage,
+  type RoomLook,
   type Participant,
   type SfuLayer,
   type SfuTrack,
@@ -33,6 +34,7 @@ export interface Room {
   hostId: string;
   participants: Map<string, Participant>; // clave = id del socket
   history: ChatMessage[]; // últimos mensajes, para quien entra tarde
+  look: RoomLook; // tema y modo fiesta (lo cambia el anfitrión)
   publication: Publication | null; // null si el anfitrión no publica por el SFU
   subscriptions: Map<string, Subscription>; // clave = id del socket del espectador
 }
@@ -59,6 +61,7 @@ export function createRoom(host: Participant): Room {
     hostId: host.id,
     participants: new Map([[host.id, host]]),
     history: [],
+    look: { theme: 'normal', party: false },
     publication: null,
     subscriptions: new Map(),
   };

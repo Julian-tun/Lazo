@@ -1,6 +1,6 @@
 // Panel del ANFITRIÓN: abrir un link en otra pestaña y compartir esa pestaña con audio.
 import { useCallback, useEffect, useRef, useState } from 'react';
-import type { Participant, SfuStats } from '@lazo/shared';
+import type { Participant, RoomTheme, SfuStats } from '@lazo/shared';
 import {
   getPublishStats,
   publishToSfu,
@@ -31,6 +31,8 @@ import {
 
 interface Props {
   guests: Participant[]; // espectadores en la sala (máx. 3)
+  theme: RoomTheme; // tema de colores para todos (normal o rosita)
+  onTheme: (theme: RoomTheme) => void;
   fiesta: boolean; // ¿está activo el modo fiesta? 🎂
   onFiesta: (on: boolean) => Promise<string | null>; // activa/desactiva (devuelve error o null)
 }
@@ -62,7 +64,7 @@ function normalizeUrl(raw: string): string | null {
   }
 }
 
-export function HostPanel({ guests, fiesta, onFiesta }: Props) {
+export function HostPanel({ guests, theme, onTheme, fiesta, onFiesta }: Props) {
   const [url, setUrl] = useState('');
   const [stream, setStream] = useState<MediaStream | null>(null);
   const [message, setMessage] = useState<string | null>(null);
@@ -654,7 +656,23 @@ export function HostPanel({ guests, fiesta, onFiesta }: Props) {
             </ul>
           ))}
 
-        {/* Modo fiesta 🎂: cambia el diseño para todos los de la sala */}
+        {/* Tema de colores: se cambia para todos y se queda guardado para la próxima vez */}
+        <div className="flex flex-wrap items-center gap-2">
+          <label className="flex items-center gap-2 text-sm text-zinc-400">
+            Tema:
+            <select
+              className="rounded-lg border border-zinc-700 bg-zinc-900 px-2 py-1.5 text-sm text-zinc-100"
+              value={theme}
+              onChange={(e) => onTheme(e.target.value as RoomTheme)}
+            >
+              <option value="normal">Normal (oscuro)</option>
+              <option value="fiamma">Fiamma 🌸 (rosita)</option>
+            </select>
+          </label>
+          <span className="text-xs text-zinc-500">Todos lo ven y se queda así siempre</span>
+        </div>
+
+        {/* Modo fiesta 🎂: canción y felicitaciones para todos los de la sala */}
         <div className="flex flex-wrap items-center gap-2">
           <button
             onClick={async () => {
