@@ -137,6 +137,7 @@ export default function Room() {
           <section className="shrink-0 lg:flex-1 lg:overflow-y-auto">
             <div className="mx-auto max-w-3xl">
               <HostPanel
+                meId={me.id}
                 guests={guests}
                 theme={myTheme}
                 onTheme={(t) => {

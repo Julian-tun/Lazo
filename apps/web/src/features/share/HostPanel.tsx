@@ -31,6 +31,7 @@ import {
 } from '../../lib/webrtc';
 
 interface Props {
+  meId: string; // mi id de conexión: cambia si me reconecté (ver el efecto del SFU)
   guests: Participant[]; // espectadores en la sala (máx. 3)
   theme: RoomTheme; // tema de colores para todos (normal o rosita)
   onTheme: (theme: RoomTheme) => void;
@@ -65,7 +66,7 @@ function normalizeUrl(raw: string): string | null {
   }
 }
 
-export function HostPanel({ guests, theme, onTheme, fiesta, onFiesta }: Props) {
+export function HostPanel({ meId, guests, theme, onTheme, fiesta, onFiesta }: Props) {
   const [url, setUrl] = useState('');
   const [stream, setStream] = useState<MediaStream | null>(null);
   const [message, setMessage] = useState<string | null>(null);
@@ -240,6 +241,8 @@ export function HostPanel({ guests, theme, onTheme, fiesta, onFiesta }: Props) {
 
   // Al empezar a compartir: publicar por el SFU de Cloudflare si está configurado.
   // Si no lo está (o falla), conexión directa con cada espectador, como antes. Nunca sin video.
+  // También se repite si me reconecté (meId cambia): si mi internet o el túnel se cortó un
+  // momento, el servidor me sacó de la sala y apagó mi video; al volver lo mando de nuevo solo.
   useEffect(() => {
     if (!stream) return;
     let cancelled = false;
@@ -289,7 +292,7 @@ export function HostPanel({ guests, theme, onTheme, fiesta, onFiesta }: Props) {
       setModeBoth(null);
       setSfuInfo(null);
     };
-  }, [stream, startCall, closeAll, setModeBoth]);
+  }, [stream, meId, startCall, closeAll, setModeBoth]);
 
   // Si un espectador se va, cerramos solo su conexión
   useEffect(() => {
