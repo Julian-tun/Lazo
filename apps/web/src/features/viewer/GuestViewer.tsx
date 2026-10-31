@@ -5,7 +5,8 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import type { SfuLayer } from '@lazo/shared';
 import { subscribeFromSfu, type SfuSubscriber } from '../../lib/sfu';
-import { socket } from '../../lib/socket';
+import { AutoLayer, judge, readRecvSample, type RecvSample } from '../../lib/sfuQuality';
+import { ACK_TIMEOUT_MS, socket } from '../../lib/socket';
 import { createPeerLink, getIceConfig, opusStereo, type PeerLink } from '../../lib/webrtc';
 
 interface Props {
@@ -16,6 +17,19 @@ interface Props {
 }
 
 type Status = 'waiting' | 'connecting' | 'live' | 'failed';
+type Choice = 'auto' | SfuLayer; // calidad elegida por el espectador
+
+const LAYER_LABEL: Record<SfuLayer, string> = { f: 'Alta', h: 'Media', q: 'Baja' };
+
+/** Pide al servidor otra capa del SFU. Devuelve true si se aceptó. */
+async function askLayer(layer: SfuLayer): Promise<boolean> {
+  try {
+    const r = await socket.timeout(ACK_TIMEOUT_MS).emitWithAck('sfu:layer', { layer });
+    return r.ok;
+  } catch {
+    return false;
+  }
+}
 
 export function GuestViewer({ meId, hostId, overlay }: Props) {
   const boxRef = useRef<HTMLDivElement>(null);
@@ -25,6 +39,14 @@ export function GuestViewer({ meId, hostId, overlay }: Props) {
   // Capa del SFU que pedimos: f = completa (la mejor), h = mitad, q = cuarto
   const layerRef = useRef<SfuLayer>('f');
   const [status, setStatus] = useState<Status>('waiting');
+  // Por dónde llega el video ahora: Cloudflare (SFU) o directo del anfitrión (P2P)
+  const [via, setVia] = useState<'sfu' | 'p2p' | null>(null);
+  // Capa que recibimos y calidad elegida (Auto = la decide la app según tu internet)
+  const [layer, setLayer] = useState<SfuLayer>('f');
+  const [choice, setChoice] = useState<Choice>('auto');
+  const choiceRef = useRef<Choice>('auto');
+  // Lo que llega ahora (alto y cuadros por segundo), para mostrarlo en el selector
+  const [recv, setRecv] = useState<{ height: number | null; fps: number } | null>(null);
   // Arranca silenciado: los navegadores solo dejan reproducir solo si está en silencio
   const [muted, setMuted] = useState(true);
   const [isFullscreen, setIsFullscreen] = useState(false);
@@ -59,6 +81,7 @@ export function GuestViewer({ meId, hostId, overlay }: Props) {
       closeSfu();
       if (videoRef.current) videoRef.current.srcObject = null;
       setStatus('waiting');
+      setVia(null);
     };
     /** Pone el stream en el <video> (si no estaba ya). */
     const show = (remote: MediaStream) => {
@@ -99,12 +122,14 @@ export function GuestViewer({ meId, hostId, overlay }: Props) {
             // Se cayó la conexión con Cloudflare: pedimos conexión directa al anfitrión
             console.warn('[guest] se cayó la conexión con el SFU; pido conexión directa');
             closeSfu();
+            setStatus('connecting');
             socket.emit('webrtc:request', { p2p: true });
           }
         });
         if (my !== attempt) return sub.close();
         sfuRef.current = sub;
         show(sub.stream);
+        setVia('sfu');
         setStatus('live');
       } catch (err) {
         if (my !== attempt) return;
@@ -150,8 +175,10 @@ export function GuestViewer({ meId, hostId, overlay }: Props) {
       };
       link.pc.onconnectionstatechange = () => {
         const st = link.pc.connectionState;
-        if (st === 'connected') setStatus('live');
-        else if (st === 'failed') setStatus('failed');
+        if (st === 'connected') {
+          setVia('p2p');
+          setStatus('live');
+        } else if (st === 'failed') setStatus('failed');
         else if (st === 'disconnected') setStatus('connecting');
       };
 
@@ -198,6 +225,50 @@ export function GuestViewer({ meId, hostId, overlay }: Props) {
       reset();
     };
   }, [meId, hostId]);
+
+  // Calidad automática (solo por SFU): cada 2 s medimos cómo llega el video y, si hace
+  // falta, pedimos otra capa. Así el que tiene mal internet baja SIN afectar a los demás.
+  useEffect(() => {
+    if (status !== 'live' || via !== 'sfu') return;
+    const auto = new AutoLayer(layerRef.current, Date.now());
+    let prev: RecvSample | null = null;
+    let busy = false;
+    const timer = setInterval(async () => {
+      const sub = sfuRef.current;
+      if (!sub || busy) return;
+      busy = true;
+      try {
+        const cur = await readRecvSample(sub.pc).catch(() => null);
+        if (!cur) return;
+        const j = prev ? judge(prev, cur) : null;
+        prev = cur;
+        if (!j) return;
+        setRecv({ height: cur.height, fps: Math.round(j.fps) });
+        // Calidad elegida a mano: el automático solo se mantiene al día
+        if (choiceRef.current !== 'auto') return auto.revert(layerRef.current, Date.now());
+        const next = auto.next(j, Date.now());
+        if (!next) return;
+        const before = layerRef.current;
+        if (await askLayer(next)) {
+          layerRef.current = next;
+          setLayer(next);
+        } else auto.revert(before, Date.now());
+      } finally {
+        busy = false;
+      }
+    }, 2000);
+    return () => clearInterval(timer);
+  }, [status, via]);
+
+  /** El espectador elige la calidad: Auto o una capa fija. */
+  async function chooseQuality(c: Choice) {
+    setChoice(c);
+    choiceRef.current = c;
+    if (c !== 'auto' && c !== layerRef.current && (await askLayer(c))) {
+      layerRef.current = c;
+      setLayer(c);
+    }
+  }
 
   function unmute() {
     const video = videoRef.current;
@@ -264,6 +335,27 @@ export function GuestViewer({ meId, hostId, overlay }: Props) {
         >
           ⛶
         </button>
+      )}
+
+      {/* Calidad del video (solo si llega por Cloudflare): Auto la ajusta según tu internet */}
+      {status === 'live' && via === 'sfu' && (
+        <select
+          value={choice}
+          onChange={(e) => void chooseQuality(e.target.value as Choice)}
+          title="Calidad del video"
+          aria-label="Calidad del video"
+          className="absolute top-2 left-11 rounded-lg border-0 bg-black/50 px-2 py-1 text-sm text-white/80 hover:bg-black/70"
+        >
+          <option className="bg-zinc-900" value="auto">
+            Auto · {LAYER_LABEL[layer]}
+            {recv?.height ? ` ${recv.height}p` : ''}
+          </option>
+          {(['f', 'h', 'q'] as SfuLayer[]).map((l) => (
+            <option key={l} className="bg-zinc-900" value={l}>
+              {LAYER_LABEL[l]}
+            </option>
+          ))}
+        </select>
       )}
     </div>
   );
