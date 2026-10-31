@@ -131,7 +131,8 @@ export interface ServerToClientEvents {
   'webrtc:offer': (p: SignalOffer & { fromId: string }) => void;
   'webrtc:answer': (p: SignalAnswer & { fromId: string }) => void;
   'webrtc:ice': (p: SignalIce & { fromId: string }) => void;
-  'webrtc:request': (p: { fromId: string }) => void;
+  // p2p = true: este invitado pide conexión directa aunque haya SFU (el SFU le falló)
+  'webrtc:request': (p: { fromId: string; p2p: boolean }) => void;
   'webrtc:stop': (p: { fromId: string }) => void;
   // Hay una publicación del anfitrión en el SFU lista para recibir
   'sfu:published': (p: { pubId: string }) => void;

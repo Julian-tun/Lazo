@@ -1,7 +1,12 @@
 // Visor del INVITADO: recibe por WebRTC la pestaña que comparte el anfitrión.
+// Dos caminos:
+//   - SFU: el video llega desde Cloudflare (cuando el anfitrión publica ahí).
+//   - P2P: conexión directa con el anfitrión (si no hay SFU o si el SFU falla).
 import { useEffect, useRef, useState, type ReactNode } from 'react';
+import type { SfuLayer } from '@lazo/shared';
+import { subscribeFromSfu, type SfuSubscriber } from '../../lib/sfu';
 import { socket } from '../../lib/socket';
-import { createPeerLink, getIceConfig, type PeerLink } from '../../lib/webrtc';
+import { createPeerLink, getIceConfig, opusStereo, type PeerLink } from '../../lib/webrtc';
 
 interface Props {
   meId: string;
@@ -15,7 +20,10 @@ type Status = 'waiting' | 'connecting' | 'live' | 'failed';
 export function GuestViewer({ meId, hostId, overlay }: Props) {
   const boxRef = useRef<HTMLDivElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
-  const linkRef = useRef<PeerLink | null>(null);
+  const linkRef = useRef<PeerLink | null>(null); // conexión directa (P2P)
+  const sfuRef = useRef<SfuSubscriber | null>(null); // conexión con Cloudflare (SFU)
+  // Capa del SFU que pedimos: f = completa (la mejor), h = mitad, q = cuarto
+  const layerRef = useRef<SfuLayer>('f');
   const [status, setStatus] = useState<Status>('waiting');
   // Arranca silenciado: los navegadores solo dejan reproducir solo si está en silencio
   const [muted, setMuted] = useState(true);
@@ -37,27 +45,98 @@ export function GuestViewer({ meId, hostId, overlay }: Props) {
     };
   }, []);
 
-  const reset = () => {
-    linkRef.current?.close();
-    linkRef.current = null;
-    if (videoRef.current) videoRef.current.srcObject = null;
-    setStatus('waiting');
-  };
-
   useEffect(() => {
+    const closeP2P = () => {
+      linkRef.current?.close();
+      linkRef.current = null;
+    };
+    const closeSfu = () => {
+      sfuRef.current?.close();
+      sfuRef.current = null;
+    };
+    const reset = () => {
+      closeP2P();
+      closeSfu();
+      if (videoRef.current) videoRef.current.srcObject = null;
+      setStatus('waiting');
+    };
+    /** Pone el stream en el <video> (si no estaba ya). */
+    const show = (remote: MediaStream) => {
+      const video = videoRef.current;
+      if (video && video.srcObject !== remote) {
+        video.srcObject = remote;
+        video.play().catch(() => {}); // si falla, el usuario puede tocar "Activar sonido"
+      }
+    };
+
+    // Cada intento nuevo (SFU u oferta P2P) invalida a los anteriores que sigan en curso
+    let attempt = 0;
+    // Publicación del SFU que estamos conectando ahora (para no repetirla si llega dos veces el aviso)
+    let pendingPub: string | null = null;
     // Oferta más reciente: si llegan dos seguidas, gana la última
     let latestCallId: string | null = null;
     // Candidatos ICE que llegan mientras aún preparamos la conexión
     let earlyIce: { callId: string; candidate: RTCIceCandidateInit }[] = [];
 
-    // El anfitrión nos manda una oferta: creamos la conexión y respondemos
+    // ---- SFU: el anfitrión publica en Cloudflare -> recibimos de ahí ----
+    const onSfuPublished = async ({ pubId }: { pubId: string }) => {
+      if (pendingPub === pubId) return; // ya lo estamos conectando
+      if (sfuRef.current?.pubId === pubId && sfuRef.current.pc.connectionState === 'connected') return;
+      const my = ++attempt;
+      pendingPub = pubId;
+      latestCallId = null; // ofertas P2P anteriores ya no valen
+      setStatus('connecting');
+      closeSfu();
+      closeP2P();
+      try {
+        const { iceServers } = await getIceConfig();
+        if (my !== attempt) return;
+        const sub = await subscribeFromSfu(layerRef.current, iceServers, (state) => {
+          if (sfuRef.current !== sub) return;
+          if (state === 'connected') setStatus('live');
+          else if (state === 'disconnected') setStatus('connecting');
+          else if (state === 'failed') {
+            // Se cayó la conexión con Cloudflare: pedimos conexión directa al anfitrión
+            console.warn('[guest] se cayó la conexión con el SFU; pido conexión directa');
+            closeSfu();
+            socket.emit('webrtc:request', { p2p: true });
+          }
+        });
+        if (my !== attempt) return sub.close();
+        sfuRef.current = sub;
+        show(sub.stream);
+        setStatus('live');
+      } catch (err) {
+        if (my !== attempt) return;
+        console.warn('[guest] no se pudo recibir del SFU; pido conexión directa', err);
+        socket.emit('webrtc:request', { p2p: true });
+      } finally {
+        if (my === attempt) pendingPub = null;
+      }
+    };
+    const onSfuUnpublished = ({ pubId }: { pubId: string }) => {
+      if (sfuRef.current?.pubId !== pubId && pendingPub !== pubId) return;
+      attempt++; // cancela una conexión al SFU que siga en curso
+      pendingPub = null;
+      closeSfu();
+      // Si no hay conexión directa, toca esperar (el anfitrión vuelve a compartir o pasa a P2P)
+      if (!linkRef.current) {
+        if (videoRef.current) videoRef.current.srcObject = null;
+        setStatus('waiting');
+      }
+    };
+
+    // ---- P2P: el anfitrión nos manda una oferta: creamos la conexión y respondemos ----
     const onOffer = async ({ callId, sdp }: { callId: string; sdp: RTCSessionDescriptionInit }) => {
+      const my = ++attempt; // la conexión directa reemplaza a la del SFU
+      pendingPub = null;
       latestCallId = callId;
       setStatus('connecting');
       const { iceServers } = await getIceConfig(); // STUN + TURN de respaldo (si hay)
-      if (latestCallId !== callId) return; // mientras tanto llegó otra oferta
+      if (latestCallId !== callId || my !== attempt) return; // mientras tanto llegó otra cosa
 
-      linkRef.current?.close();
+      closeSfu();
+      closeP2P();
       const link = createPeerLink(callId, iceServers, (candidate) =>
         socket.emit('webrtc:ice', { callId, candidate }),
       );
@@ -66,12 +145,8 @@ export function GuestViewer({ meId, hostId, overlay }: Props) {
       earlyIce = [];
 
       link.pc.ontrack = (e) => {
-        const video = videoRef.current;
         const [remote] = e.streams;
-        if (video && remote && video.srcObject !== remote) {
-          video.srcObject = remote;
-          video.play().catch(() => {}); // si falla, el usuario puede tocar "Activar sonido"
-        }
+        if (remote) show(remote);
       };
       link.pc.onconnectionstatechange = () => {
         const st = link.pc.connectionState;
@@ -82,7 +157,9 @@ export function GuestViewer({ meId, hostId, overlay }: Props) {
 
       try {
         await link.setRemote(sdp);
-        const answer = await link.pc.createAnswer();
+        const created = await link.pc.createAnswer();
+        // Audio en estéreo: el que recibe también lo indica en su respuesta (ver opusStereo)
+        const answer: RTCSessionDescriptionInit = { type: 'answer', sdp: opusStereo(created.sdp ?? '') };
         await link.pc.setLocalDescription(answer);
         if (linkRef.current === link) socket.emit('webrtc:answer', { callId, sdp: answer });
       } catch (err) {
@@ -95,20 +172,29 @@ export function GuestViewer({ meId, hostId, overlay }: Props) {
       if (link?.callId === callId) void link.addIce(candidate);
       else if (callId === latestCallId && earlyIce.length < 50) earlyIce.push({ callId, candidate });
     };
-    const onStop = () => reset();
+    const onStop = () => {
+      attempt++;
+      pendingPub = null;
+      reset();
+    };
 
     socket.on('webrtc:offer', onOffer);
     socket.on('webrtc:ice', onIce);
     socket.on('webrtc:stop', onStop);
+    socket.on('sfu:published', onSfuPublished);
+    socket.on('sfu:unpublished', onSfuUnpublished);
 
-    // Ya estamos escuchando: le pedimos el video al anfitrión.
-    // Así funciona aunque entremos tarde, cuando él ya está compartiendo.
+    // Ya estamos escuchando: pedimos el video. Así funciona aunque entremos tarde, cuando el
+    // anfitrión ya está compartiendo. (Si publica por el SFU, el servidor nos contesta 'sfu:published'.)
     if (hostId) socket.emit('webrtc:request');
 
     return () => {
+      attempt++;
       socket.off('webrtc:offer', onOffer);
       socket.off('webrtc:ice', onIce);
       socket.off('webrtc:stop', onStop);
+      socket.off('sfu:published', onSfuPublished);
+      socket.off('sfu:unpublished', onSfuUnpublished);
       reset();
     };
   }, [meId, hostId]);

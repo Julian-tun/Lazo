@@ -241,6 +241,28 @@ export async function getSendStats(pc: RTCPeerConnection): Promise<SendStats | n
   };
 }
 
+/**
+ * Audio en ESTÉREO y con más calidad (hasta 128 kbps) para películas y música.
+ * Por defecto Chrome manda el audio Opus en mono a ~32 kbps. Se agregan los parámetros
+ * "stereo" y "maxaveragebitrate" a las líneas de Opus del SDP:
+ * - en la descripción REMOTA del que envía: así sabe que puede mandar estéreo;
+ * - en la respuesta LOCAL del que recibe: así lo reproduce en estéreo.
+ */
+export function opusStereo(sdp: string): string {
+  const opus = [...sdp.matchAll(/^a=rtpmap:(\d+) opus\/48000\/2\r?$/gim)].map((m) => m[1]);
+  let out = sdp;
+  for (const pt of opus) {
+    out = out.replace(new RegExp(`^(a=fmtp:${pt} [^\r\n]*)`, 'gm'), (line) => {
+      let l = line;
+      if (!/[; ]stereo=1/.test(l)) l += ';stereo=1';
+      if (!/sprop-stereo=1/.test(l)) l += ';sprop-stereo=1';
+      if (!/maxaveragebitrate=/.test(l)) l += ';maxaveragebitrate=128000';
+      return l;
+    });
+  }
+  return out;
+}
+
 export type Route = 'direct' | 'relay';
 
 /**

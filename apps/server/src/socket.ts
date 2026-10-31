@@ -228,7 +228,7 @@ export function registerSocketHandlers(io: IO) {
       // Con p2p = true (el SFU le falló a este invitado) se pide la conexión directa al anfitrión.
       const pub = currentRoom.publication;
       if (pub?.live && p?.p2p !== true) return void socket.emit('sfu:published', { pubId: pub.id });
-      io.to(host).emit('webrtc:request', { fromId: socket.id });
+      io.to(host).emit('webrtc:request', { fromId: socket.id, p2p: p?.p2p === true });
     });
     socket.on('webrtc:config', (ack) => {
       if (typeof ack !== 'function') return;

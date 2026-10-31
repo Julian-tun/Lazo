@@ -1,6 +1,13 @@
 // Panel del ANFITRIÓN: abrir un link en otra pestaña y compartir esa pestaña con audio.
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { Participant } from '@lazo/shared';
+import {
+  getPublishStats,
+  publishToSfu,
+  tuneSimulcast,
+  type LayerStats,
+  type SfuPublisher,
+} from '../../lib/sfu';
 import { socket } from '../../lib/socket';
 import {
   captureConstraints,
@@ -10,6 +17,7 @@ import {
   getRoute,
   getSendStats,
   newCallId,
+  opusStereo,
   preferVp9,
   refreshAdaptation,
   QUALITY,
@@ -35,6 +43,12 @@ const PEER_LABEL: Record<RTCPeerConnectionState, string> = {
   failed: 'falló la conexión',
   closed: 'sin video',
 };
+
+// Cómo se envía el video: preparando, por Cloudflare (SFU) o directo a cada espectador (P2P)
+type Mode = 'iniciando' | 'sfu' | 'p2p';
+
+// Nombre de cada capa del simulcast
+const LAYER_LABEL: Record<LayerStats['rid'], string> = { f: 'alta', h: 'media', q: 'baja' };
 
 /** Acepta "youtube.com/..." y le añade https:// si falta. Devuelve null si no es válido. */
 function normalizeUrl(raw: string): string | null {
@@ -81,6 +95,17 @@ export function HostPanel({ guests, fiesta, onFiesta }: Props) {
   >({});
   // Lo que Chrome captura de la pestaña (tamaño y cuadros por segundo)
   const [capture, setCapture] = useState<{ width: number; height: number; fps: number | null } | null>(null);
+  // Cómo se envía el video ahora (null = no se comparte)
+  const [mode, setMode] = useState<Mode | null>(null);
+  const modeRef = useRef<Mode | null>(null);
+  const setModeBoth = useCallback((m: Mode | null) => {
+    modeRef.current = m;
+    setMode(m);
+  }, []);
+  // Conexión con el SFU de Cloudflare (solo en modo 'sfu')
+  const sfuRef = useRef<SfuPublisher | null>(null);
+  // Lo que se envía al SFU: cada capa y la velocidad total
+  const [sfuInfo, setSfuInfo] = useState<{ layers: LayerStats[]; kbps: number | null } | null>(null);
   // Último conteo de bytes enviados, para calcular la velocidad (kbps)
   const lastBytesRef = useRef(new Map<string, { bytes: number; at: number }>());
   // Última vez que el "guardián" reinició la calidad de cada espectador
@@ -166,7 +191,11 @@ export function HostPanel({ guests, fiesta, onFiesta }: Props) {
       sdp: RTCSessionDescriptionInit;
     }) => {
       const link = linksRef.current.get(fromId);
-      if (link?.callId === callId) link.setRemote(sdp).catch((e) => console.error('[host] answer', e));
+      if (link?.callId !== callId) return;
+      // Audio en estéreo y con más calidad (ver opusStereo)
+      link
+        .setRemote({ type: sdp.type, sdp: opusStereo(sdp.sdp ?? '') })
+        .catch((e) => console.error('[host] answer', e));
     };
     const onIce = ({
       fromId,
@@ -180,8 +209,13 @@ export function HostPanel({ guests, fiesta, onFiesta }: Props) {
       const link = linksRef.current.get(fromId);
       if (link?.callId === callId) void link.addIce(candidate);
     };
-    // Un espectador está listo (entró, entró tarde o pulsó "Reintentar")
-    const onRequest = ({ fromId }: { fromId: string }) => void startCall(fromId);
+    // Un espectador está listo (entró, entró tarde o pulsó "Reintentar").
+    // Si enviamos por el SFU, él recibe de Cloudflare: solo usamos conexión directa
+    // si estamos en modo P2P o si a ese espectador el SFU le falló (p2p = true).
+    const onRequest = ({ fromId, p2p }: { fromId: string; p2p: boolean }) => {
+      if (modeRef.current !== 'p2p' && !p2p) return;
+      void startCall(fromId);
+    };
 
     socket.on('webrtc:answer', onAnswer);
     socket.on('webrtc:ice', onIce);
@@ -193,11 +227,58 @@ export function HostPanel({ guests, fiesta, onFiesta }: Props) {
     };
   }, [startCall]);
 
-  // Al empezar a compartir: conectar con todos los espectadores que ya están en la sala
+  // Al empezar a compartir: publicar por el SFU de Cloudflare si está configurado.
+  // Si no lo está (o falla), conexión directa con cada espectador, como antes. Nunca sin video.
   useEffect(() => {
-    if (stream) for (const g of guestsRef.current) void startCall(g.id);
-    return closeAll;
-  }, [stream, startCall, closeAll]);
+    if (!stream) return;
+    let cancelled = false;
+    modeRef.current = 'iniciando'; // la vista muestra "preparando…" mientras mode siga en null
+
+    const goP2P = () => {
+      setModeBoth('p2p');
+      for (const g of guestsRef.current) void startCall(g.id);
+    };
+    const dropSfu = () => {
+      sfuRef.current?.close();
+      sfuRef.current = null;
+      socket.emit('sfu:unpublish');
+    };
+
+    void (async () => {
+      const cfg = await getIceConfig();
+      if (cancelled) return;
+      if (!cfg.sfu) return goP2P();
+      try {
+        const pub = await publishToSfu(stream, cfg.iceServers, qualityRef.current, contentRef.current, () => {
+          // Se cayó la conexión con Cloudflare: seguimos por conexión directa
+          if (sfuRef.current !== pub || cancelled) return;
+          console.warn('[host] se cayó la conexión con el SFU; paso a conexión directa');
+          dropSfu();
+          goP2P();
+        });
+        if (cancelled) {
+          pub.close();
+          socket.emit('sfu:unpublish');
+          return;
+        }
+        sfuRef.current = pub;
+        setModeBoth('sfu');
+      } catch (err) {
+        if (cancelled) return;
+        console.warn('[host] no se pudo usar el SFU; uso conexión directa', err);
+        socket.emit('sfu:unpublish'); // por si el servidor alcanzó a registrar algo
+        goP2P();
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+      closeAll();
+      if (sfuRef.current) dropSfu();
+      setModeBoth(null);
+      setSfuInfo(null);
+    };
+  }, [stream, startCall, closeAll, setModeBoth]);
 
   // Si un espectador se va, cerramos solo su conexión
   useEffect(() => {
@@ -255,6 +336,36 @@ export function HostPanel({ guests, fiesta, onFiesta }: Props) {
           void refreshAdaptation(link.pc, contentRef.current);
         }
       }
+      // Envío por el SFU: cada capa, velocidad total y guardián de la capa completa
+      const pub = sfuRef.current;
+      let nextSfu: typeof sfuInfo = null;
+      if (pub && pub.pc.connectionState === 'connected') {
+        const st = await getPublishStats(pub.pc).catch(() => null);
+        if (st) {
+          const last = lastBytesRef.current.get('sfu');
+          const kbps =
+            last && st.timestamp > last.at
+              ? Math.round(((st.bytesSent - last.bytes) * 8) / (st.timestamp - last.at))
+              : null;
+          lastBytesRef.current.set('sfu', { bytes: st.bytesSent, at: st.timestamp });
+          nextSfu = { layers: st.layers, kbps };
+          if (!nextCapture && st.source) nextCapture = st.source;
+          // Misma regla b) del guardián: capa completa chica sin ningún límite = atascada
+          const f = st.layers.find((l) => l.rid === 'f');
+          const lastFix = lastFixRef.current.get('sfu') ?? 0;
+          if (
+            f?.limitedBy === 'none' &&
+            f.height !== null &&
+            st.source &&
+            f.height < st.source.height * 0.5 &&
+            Date.now() - lastFix > 15_000
+          ) {
+            lastFixRef.current.set('sfu', Date.now());
+            void refreshAdaptation(pub.pc, contentRef.current);
+          }
+        }
+      }
+      setSfuInfo(nextSfu);
       // Sin espectadores conectados: lo que Chrome dice de la captura (sin fps reales)
       if (!nextCapture) {
         const set = streamRef.current?.getVideoTracks()[0]?.getSettings();
@@ -274,6 +385,7 @@ export function HostPanel({ guests, fiesta, onFiesta }: Props) {
     if (video)
       await video.applyConstraints(captureConstraints(q)).catch((e) => console.warn('[host] calidad', e));
     for (const link of linksRef.current.values()) await tuneVideoSender(link.pc, q, contentRef.current);
+    if (sfuRef.current) await tuneSimulcast(sfuRef.current.pc, q, contentRef.current);
   }
 
   /** Cambia el tipo de contenido (película o texto). Se puede cambiar mientras se comparte. */
@@ -283,6 +395,7 @@ export function HostPanel({ guests, fiesta, onFiesta }: Props) {
     const video = streamRef.current?.getVideoTracks()[0];
     if (video) video.contentHint = CONTENT[c].hint;
     for (const link of linksRef.current.values()) await tuneVideoSender(link.pc, qualityRef.current, c);
+    if (sfuRef.current) await tuneSimulcast(sfuRef.current.pc, qualityRef.current, c);
   }
 
   // Vista previa local de lo que se comparte
@@ -422,6 +535,31 @@ export function HostPanel({ guests, fiesta, onFiesta }: Props) {
             </select>
           </label>
         </div>
+        {/* Cómo se envía el video: por Cloudflare (una sola subida) o directo a cada espectador */}
+        {sharing && (
+          <p className="text-xs text-zinc-500">
+            Envío: {(mode === null || mode === 'iniciando') && 'preparando…'}
+            {mode === 'p2p' && 'directo a cada espectador (P2P)'}
+            {mode === 'sfu' && (
+              <span className="text-sky-300">vía Cloudflare (SFU): una sola subida para todos</span>
+            )}
+            {mode === 'sfu' && sfuInfo && (
+              <span>
+                {' · capas '}
+                {sfuInfo.layers
+                  .map((l) => `${LAYER_LABEL[l.rid]} ${l.height ? `${l.height}p` : 'pausada'}`)
+                  .join(' / ')}
+                {sfuInfo.kbps !== null && ` · ${(sfuInfo.kbps / 1000).toFixed(1)} Mbps`}
+              </span>
+            )}
+            {mode === 'sfu' && sfuInfo?.layers.some((l) => l.limitedBy === 'cpu') && (
+              <span className="text-amber-300"> · ⚠ limitado por tu compu</span>
+            )}
+            {mode === 'sfu' && sfuInfo?.layers.some((l) => l.limitedBy === 'bandwidth') && (
+              <span className="text-amber-300"> · ⚠ limitado por tu subida de internet</span>
+            )}
+          </p>
+        )}
         {/* Lo que Chrome captura de la pestaña: si aquí ya sale chico o lento, el problema es la captura */}
         {sharing && capture && (
           <p className="text-xs text-zinc-500">
@@ -454,7 +592,8 @@ export function HostPanel({ guests, fiesta, onFiesta }: Props) {
                         state === 'connected' ? 'text-emerald-400' : state === 'failed' ? 'text-red-300' : ''
                       }
                     >
-                      {state ? PEER_LABEL[state] : 'esperando…'}
+                      {state ? PEER_LABEL[state] : mode === 'sfu' ? '' : 'esperando…'}
+                      {!state && mode === 'sfu' && <span className="text-sky-300">recibe de Cloudflare</span>}
                     </span>
                     {route && (
                       <span className={route === 'relay' ? 'text-sky-300' : 'text-zinc-500'}>
