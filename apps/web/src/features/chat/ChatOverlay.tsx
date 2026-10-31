@@ -28,9 +28,12 @@ export function ChatOverlay({ messages, meId, onSend, className = '' }: Props) {
           <button
             onClick={() => setOpen(true)}
             title="Abrir chat"
-            className="absolute bottom-3 left-3 z-10 grid size-10 place-items-center rounded-full bg-black/50 text-lg backdrop-blur-sm hover:bg-black/70"
+            aria-label="Abrir chat"
+            className="glass-btn absolute bottom-3 left-3 z-10 size-11"
           >
-            💬
+            <svg viewBox="0 0 24 24" fill="currentColor" className="size-5" aria-hidden>
+              <path d="M12 3c5 0 9 3.6 9 8s-4 8-9 8c-1 0-2-.1-2.9-.4L4.5 20.5l1.3-3.8A7.6 7.6 0 0 1 3 11c0-4.4 4-8 9-8Z" />
+            </svg>
           </button>
         </>
       )}
@@ -82,16 +85,19 @@ function QuickChat({ messages, meId, onSend, onClose }: Omit<Props, 'className'>
       <div className="absolute inset-0 z-20" onPointerDown={onClose} aria-hidden />
 
       <div
-        className="absolute top-2 left-2 z-30 flex w-[45%] max-w-xs flex-col gap-2 rounded-2xl bg-black/45 p-2 text-white backdrop-blur-sm"
+        className="animate-scale-in absolute top-2 left-2 z-30 flex w-[45%] max-w-xs origin-top-left flex-col gap-2 rounded-2xl border border-white/10 bg-black/55 p-2 text-white shadow-2xl backdrop-blur-md"
         style={{ bottom: 8 + keyboard }}
       >
         <button
           type="button"
           title="Cerrar chat"
           onClick={onClose}
-          className="absolute top-1 right-1 z-10 rounded-lg px-2 py-0.5 text-white/70 hover:bg-white/10"
+          aria-label="Cerrar chat"
+          className="absolute top-1.5 right-1.5 z-10 grid size-7 place-items-center rounded-full text-white/70 transition hover:bg-white/10 hover:text-white"
         >
-          ✕
+          <svg viewBox="0 0 20 20" fill="currentColor" className="size-4" aria-hidden>
+            <path d="M5.3 5.3a1 1 0 0 1 1.4 0L10 8.6l3.3-3.3a1 1 0 1 1 1.4 1.4L11.4 10l3.3 3.3a1 1 0 0 1-1.4 1.4L10 11.4l-3.3 3.3a1 1 0 0 1-1.4-1.4L8.6 10 5.3 6.7a1 1 0 0 1 0-1.4Z" />
+          </svg>
         </button>
 
         {/* Mensajes pegados abajo, justo encima de la caja de texto */}
@@ -115,7 +121,7 @@ function QuickChat({ messages, meId, onSend, onClose }: Omit<Props, 'className'>
         <form onSubmit={submit} className="flex gap-1.5">
           {/* Sin autoFocus: el teclado solo sale al tocar la caja "Responder…" */}
           <input
-            className="min-w-0 flex-1 rounded-lg bg-white/10 px-2 py-1.5 text-base outline-none placeholder:text-white/50 focus:bg-white/15"
+            className="min-w-0 flex-1 rounded-full bg-white/10 px-3 py-1.5 text-base transition outline-none placeholder:text-white/50 focus:bg-white/15 focus:ring-2 focus:ring-violet-400/50"
             value={text}
             maxLength={MAX_MESSAGE_LENGTH}
             placeholder="Responder…"
@@ -124,9 +130,12 @@ function QuickChat({ messages, meId, onSend, onClose }: Omit<Props, 'className'>
           />
           <button
             title="Enviar"
-            className="rounded-lg bg-violet-600 px-2.5 text-sm font-semibold hover:bg-violet-500"
+            aria-label="Enviar"
+            className="grid size-9 shrink-0 place-items-center rounded-full bg-violet-600 transition hover:bg-violet-500 active:scale-90"
           >
-            ➤
+            <svg viewBox="0 0 24 24" fill="currentColor" className="size-4 translate-x-px" aria-hidden>
+              <path d="M3.4 20.4 21 12 3.4 3.6l-.01 6.53L15 12 3.39 13.87z" />
+            </svg>
           </button>
         </form>
       </div>

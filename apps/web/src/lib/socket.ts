@@ -22,6 +22,8 @@ export function useConnectionState(): ConnectionState {
     const onDisconnect = () => setState('reconnecting');
     socket.on('connect', onConnect);
     socket.on('disconnect', onDisconnect);
+    // Por si se conectó justo entre el primer dibujo y este momento (entrando con el enlace directo)
+    if (socket.connected) onConnect();
     return () => {
       socket.off('connect', onConnect);
       socket.off('disconnect', onDisconnect);

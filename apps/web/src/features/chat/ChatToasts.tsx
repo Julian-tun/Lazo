@@ -2,6 +2,7 @@
 // (pantalla completa o celular en horizontal con el chat cerrado).
 import { useEffect, useRef, useState } from 'react';
 import type { ChatMessage } from '@lazo/shared';
+import { Avatar } from '../../components/Avatar';
 
 interface Props {
   messages: ChatMessage[];
@@ -51,10 +52,13 @@ export function ChatToasts({ messages, meId, onOpen, className = '' }: Props) {
           key={m.id}
           onClick={onOpen}
           title="Toca para responder"
-          className="animate-chat-toast pointer-events-auto rounded-xl bg-black/60 px-3 py-1.5 text-left text-sm text-white shadow-lg backdrop-blur-sm"
+          className="animate-chat-toast pointer-events-auto flex items-start gap-2 rounded-2xl border border-white/10 bg-black/60 py-1.5 pr-3 pl-1.5 text-left text-sm text-white shadow-lg backdrop-blur-md"
         >
-          <span className="font-semibold text-violet-300">{m.name}: </span>
-          <span className="break-words">{m.text}</span>
+          <Avatar name={m.name} className="size-6 text-[11px]" />
+          <span className="min-w-0 pt-0.5">
+            <span className="font-semibold text-violet-300">{m.name}: </span>
+            <span className="break-words">{m.text}</span>
+          </span>
         </button>
       ))}
     </div>
