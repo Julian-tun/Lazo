@@ -1,7 +1,9 @@
 // Barra superior: código de sala, estado de conexión, quién está y botón salir.
-import { useState, type ReactNode } from 'react';
+// En celular va todo en una sola fila: la lista de personas se ve con el botón 👥.
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 import type { Participant } from '@lazo/shared';
 import { Avatar } from '../../components/Avatar';
+import { UsersIcon } from '../../components/icons';
 import { Logo } from '../../components/Logo';
 import type { ConnectionState } from '../../lib/socket';
 
@@ -32,7 +34,7 @@ export function RoomHeader({ code, participants, meId, connection, onLeave, clas
 
   return (
     <header
-      className={`relative z-10 flex flex-wrap items-center gap-x-3 gap-y-2 border-b border-zinc-800/70 bg-zinc-950/60 px-3 py-2 backdrop-blur-md sm:px-4 ${className}`}
+      className={`relative z-30 flex items-center gap-2 border-b border-zinc-800/70 bg-zinc-950/60 px-3 py-2 backdrop-blur-md sm:gap-3 sm:px-4 ${className}`}
     >
       <Logo className="hidden size-7 sm:block" />
 
@@ -79,8 +81,8 @@ export function RoomHeader({ code, participants, meId, connection, onLeave, clas
         <span className={online ? 'hidden sm:inline' : ''}>{online ? 'Conectado' : 'Reconectando…'}</span>
       </span>
 
-      {/* Quién está en la sala */}
-      <ul className="flex flex-1 flex-wrap gap-1.5 text-xs">
+      {/* Quién está en la sala. PC: a la vista. Celular: con el botón 👥 (abajo). */}
+      <ul className="hidden min-w-0 flex-1 flex-wrap gap-1.5 text-xs sm:flex">
         {participants.map((p) => (
           <li
             key={p.id}
@@ -94,19 +96,23 @@ export function RoomHeader({ code, participants, meId, connection, onLeave, clas
           </li>
         ))}
       </ul>
+      <span className="flex-1 sm:hidden" />
+      <PeopleButton participants={participants} meId={meId} />
 
       {extra}
 
       <button
         onClick={onLeave}
-        className="flex items-center gap-1.5 rounded-lg px-2 py-1 text-xs text-zinc-400 transition hover:bg-red-500/10 hover:text-red-300"
+        aria-label="Salir"
+        title="Salir de la sala"
+        className="flex items-center gap-1.5 rounded-lg p-1.5 text-xs text-zinc-400 transition hover:bg-red-500/10 hover:text-red-300 sm:px-2 sm:py-1"
       >
         <svg
           viewBox="0 0 20 20"
           fill="none"
           stroke="currentColor"
           strokeWidth={1.6}
-          className="size-4"
+          className="size-5 sm:size-4"
           aria-hidden
         >
           <path
@@ -115,8 +121,80 @@ export function RoomHeader({ code, participants, meId, connection, onLeave, clas
             strokeLinejoin="round"
           />
         </svg>
-        Salir
+        {/* En celular solo el ícono (el texto queda para lectores de pantalla) */}
+        <span className="sr-only sm:not-sr-only">Salir</span>
       </button>
     </header>
+  );
+}
+
+/** Celular: botón 👥 con cuántos hay; al tocarlo despliega la lista de la sala. */
+function PeopleButton({ participants, meId }: { participants: Participant[]; meId: string }) {
+  const [open, setOpen] = useState(false);
+  const boxRef = useRef<HTMLDivElement>(null);
+
+  // Abierta: tocar fuera o Esc la cierra
+  useEffect(() => {
+    if (!open) return;
+    const onDown = (e: PointerEvent) => {
+      if (!boxRef.current?.contains(e.target as Node)) setOpen(false);
+    };
+    const onKey = (e: KeyboardEvent) => e.key === 'Escape' && setOpen(false);
+    document.addEventListener('pointerdown', onDown);
+    window.addEventListener('keydown', onKey);
+    return () => {
+      document.removeEventListener('pointerdown', onDown);
+      window.removeEventListener('keydown', onKey);
+    };
+  }, [open]);
+
+  return (
+    <div ref={boxRef} className="relative sm:hidden">
+      <button
+        onClick={() => setOpen((v) => !v)}
+        aria-label="Ver quién está en la sala"
+        title="Quién está en la sala"
+        aria-expanded={open}
+        className={`flex items-center gap-1.5 rounded-full border px-2.5 py-1.5 text-xs font-medium transition active:scale-95 ${
+          open
+            ? 'border-violet-500/50 bg-violet-500/15 text-zinc-100'
+            : 'border-zinc-800 bg-zinc-900/80 text-zinc-300'
+        }`}
+      >
+        <UsersIcon />
+        {participants.length}
+      </button>
+      {open && (
+        <div
+          role="dialog"
+          aria-label="Personas en la sala"
+          className="card animate-scale-in absolute top-full right-0 mt-2 w-60 origin-top-right bg-zinc-900/95 p-2 shadow-2xl"
+        >
+          <p className="px-2 pt-1 pb-2 text-[11px] font-semibold tracking-wider text-zinc-500 uppercase">
+            En la sala · {participants.length}
+          </p>
+          {participants.map((p) => (
+            <div key={p.id} className="flex items-center gap-2.5 rounded-lg px-2 py-1.5 text-sm">
+              <Avatar name={p.name} className="size-7 text-xs" />
+              <div className="min-w-0 flex-1">
+                <p className="truncate font-medium">
+                  {p.name}
+                  {p.id === meId && <span className="font-normal text-zinc-500"> (tú)</span>}
+                </p>
+                <p className="text-xs text-zinc-500">
+                  {p.role === 'host' ? (
+                    <>
+                      <span className="text-amber-400">★</span> Comparte la pantalla
+                    </>
+                  ) : (
+                    'Espectador'
+                  )}
+                </p>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
   );
 }

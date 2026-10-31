@@ -113,14 +113,20 @@ body {
   scrollbar-color: var(--color-zinc-700) transparent;
 }
 
-/* Si la persona pidió "reducir movimiento" en su sistema, quitamos las animaciones */
+/* Si la persona pidió "reducir movimiento" en su sistema (en Android: "Quitar animaciones" o el
+   ahorro de batería), quitamos solo los adornos de este diseño: entradas, flotar, brillos y pulsos.
+   NO tocamos lo que da información o es parte de la fiesta (ruedita de carga, cintas de frases,
+   animación de cumpleaños): eso tiene sus propias reglas en fiesta.css. */
 @media (prefers-reduced-motion: reduce) {
-  *,
-  *::before,
-  *::after {
-    animation-duration: 0.01ms !important;
-    animation-iteration-count: 1 !important;
-    transition-duration: 0.01ms !important;
+  .animate-fade-in,
+  .animate-fade-up,
+  .animate-scale-in,
+  .animate-pop-in,
+  .animate-float,
+  .animate-glow,
+  .animate-ping,
+  .animate-bounce {
+    animation: none !important;
   }
 }
 

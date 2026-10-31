@@ -60,3 +60,13 @@ export function HelpIcon({ className = 'size-4' }: Props) {
     </svg>
   );
 }
+
+export function UsersIcon({ className = 'size-4' }: Props) {
+  return (
+    <svg viewBox="0 0 24 24" {...line} className={className} aria-hidden>
+      <circle cx="9" cy="8" r="3.5" />
+      <path d="M2.5 20a6.5 6.5 0 0 1 13 0" />
+      <path d="M16 4.6a3.5 3.5 0 0 1 0 6.8M18.5 14a6.5 6.5 0 0 1 3 6" />
+    </svg>
+  );
+}

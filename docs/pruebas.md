@@ -86,9 +86,13 @@ Android (Chrome) y/o iPhone (Safari):
       Tocar en cualquier parte fuera del mini chat lo cierra (también la ✕).
 - [ ] Estando en pantalla completa, girar a vertical: se sale solo de pantalla completa y se ve el chat para contestar.
 - [ ] Bloquear y desbloquear el celular: el indicador pasa por "Reconectando…" y vuelve a "Conectado".
-- [ ] **Guía de botones:** la primera vez que el celular entra como espectador sale la guía (5 pasos: sonido,
-      calidad, pantalla completa, chat y "?"). Se ve completa en vertical y en horizontal; "Saltar" o "Empezar"
+- [ ] **Guía de botones:** la primera vez que el celular entra como espectador sale la guía (6 pasos: sonido,
+      calidad, pantalla completa, chat, personas y "?"). Se ve completa en vertical y en horizontal; "Saltar" o "Empezar"
       la cierran y no vuelve a salir. El botón **?** de la barra la abre otra vez. El anfitrión nunca la ve.
+- [ ] **Barra de arriba en celular:** cabe en una sola fila (código, punto verde, 👥, ?, salir). El botón 👥 muestra
+      quién está; tocar fuera lo cierra.
+- [ ] **Fiesta con ahorro de batería:** con "reducir animaciones" o el ahorro de batería encendido, las cintas de
+      frases de arriba y abajo se siguen moviendo.
 - [ ] **Diseño:** botones, animaciones y textos se ven bien en tema normal y en tema Fiamma 🌸; los botones
       sobre el video (⚙, 💬, pantalla completa) se tocan cómodos con el dedo.
 

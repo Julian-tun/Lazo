@@ -1,36 +1,41 @@
 // Mini tutorial del espectador: explica cada botón en pocos pasos. Sale solo la primera vez que
 // alguien entra como espectador (se recuerda en el navegador) y se puede volver a ver con "?".
 import { useEffect, useState, type ReactNode } from 'react';
-import { ChatIcon, ExpandIcon, GearIcon, HelpIcon, SpeakerIcon } from '../../components/icons';
+import { ChatIcon, ExpandIcon, GearIcon, HelpIcon, SpeakerIcon, UsersIcon } from '../../components/icons';
 
 // Dónde está cada botón sobre el video (igual que en GuestViewer)
-type Spot = 'sound' | 'gear' | 'expand' | 'chat' | 'help';
+type Spot = 'sound' | 'gear' | 'expand' | 'chat' | 'people' | 'help';
 
 const STEPS: { spot: Spot; title: string; text: string }[] = [
   {
     spot: 'sound',
     title: 'Activa el sonido',
-    text: 'El video empieza en silencio. Toca «Activar sonido» para escucharlo.',
+    text: 'El video empieza en silencio. Toca «Activar sonido» para escucharlo :v',
   },
   {
     spot: 'gear',
     title: 'Elige la calidad',
-    text: 'Con el engranaje eliges Alta, Media o Baja. En Auto se ajusta sola a tu internet para que no se trabe.',
+    text: 'Con el engranaje eliges Alta, Media o Baja. En Auto se ajusta sola a tu internet para que no se trabe xd',
   },
   {
     spot: 'expand',
     title: 'Pantalla completa',
-    text: 'Mira el video en grande. Con el celular de lado se ve todavía mejor.',
+    text: 'Mira el video en grande. Con el celular de lado se ve todavía mejor xD',
   },
   {
     spot: 'chat',
     title: 'Chatea sin salir del video',
-    text: 'En pantalla completa o con el celular de lado, toca el globito para escribir. Los mensajes nuevos aparecen sobre el video.',
+    text: 'En pantalla completa o con el celular de lado, toca el globito para escribir. Los mensajes nuevos aparecen sobre el video XD',
+  },
+  {
+    spot: 'people',
+    title: '¿Quién está en la sala?',
+    text: 'En el celular, toca el botón de personas de arriba para ver quién más está mirando :v',
   },
   {
     spot: 'help',
     title: '¡Listo!',
-    text: 'Si se te olvida algo, vuelve a ver esta guía con el botón ? de arriba.',
+    text: 'Si se te olvida algo, vuelve a ver esta guía con el botón ? de arriba xd',
   },
 ];
 
@@ -131,8 +136,19 @@ function MiniVideo({ spot }: { spot: Spot }) {
 
   return (
     <div className="relative">
-      {/* Barra de arriba (solo para señalar el botón de ayuda) */}
-      <div className="flex h-7 items-center justify-end border-b border-white/5 bg-black/40 px-3">
+      {/* Barra de arriba (para señalar el botón de personas y el de ayuda) */}
+      <div className="flex h-7 items-center justify-end gap-2 border-b border-white/5 bg-black/40 px-3">
+        <span
+          className={`relative flex h-5 items-center gap-1 rounded-full px-1.5 text-[10px] transition-all duration-500 ${
+            spot === 'people' ? 'scale-125 bg-violet-500 text-white' : 'text-white/30'
+          }`}
+        >
+          {spot === 'people' && (
+            <span className="absolute inset-0 animate-ping rounded-full bg-violet-400/50" />
+          )}
+          <UsersIcon className="relative size-3.5" />
+          <span className="relative">3</span>
+        </span>
         <span
           className={`relative grid size-5 place-items-center rounded-full transition-all duration-500 ${
             spot === 'help' ? 'scale-125 bg-violet-500 text-white' : 'text-white/30'
