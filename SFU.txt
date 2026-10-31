@@ -2,7 +2,8 @@ PLAN: MEJORAR FLUIDEZ Y CALIDAD DEL VIDEO DE LAZO (con SFU de Cloudflare)
 ==========================================================================
 Fecha: 28/10/2026
 Rama de trabajo: mejoras/sfu-calidad (sale de mejoras/estructura)
-Estado: PLAN LISTO. Todavía NO se cambió código del video.
+Estado (30/10/2026): FASES 0 A 6 HECHAS Y PROBADAS. Falta la FASE 7 con personas reales
+(celular de Fiamma y el amigo de Argentina) y el Pull Request.
 Diagnóstico anterior: docs/soluciones-video.md (leerlo también).
 
 Escenario real: 1 anfitrión (México, PC con Chrome) + 2 espectadores,
@@ -81,9 +82,9 @@ Prioridad: que sea GRATIS, fluido y nítido.
 
 FASE 0 - Preparación (la hace el USUARIO, ~10 min)
 --------------------------------------------------
-[ ] En el panel de Cloudflare -> Realtime -> SFU -> "Create application".
+[x] En el panel de Cloudflare -> Realtime -> SFU -> "Create application".
     Copiar el App ID y el App Secret (API token).
-[ ] Ponerlos en apps/server/.env (NUNCA se sube a git):
+[x] Ponerlos en apps/server/.env (NUNCA se sube a git):
         CLOUDFLARE_SFU_APP_ID=...
         CLOUDFLARE_SFU_APP_SECRET=...
     (Yo agrego las líneas vacías a .env.example.)
@@ -93,93 +94,93 @@ FASE 0 - Preparación (la hace el USUARIO, ~10 min)
 FASE 1 - Mejoras rápidas SIN SFU (solo la web, ~1-2 h)  <- se nota en casa ya
 ---------------------------------------------------------------------------
 Archivos: apps/web/src/lib/webrtc.ts, apps/web/src/features/share/HostPanel.tsx
-[ ] 1.1 Selector "Tipo de contenido" en el panel del anfitrión:
+[x] 1.1 Selector "Tipo de contenido" en el panel del anfitrión:
         - "Película"  -> contentHint 'motion' + degradationPreference 'maintain-framerate'
         - "Página/Texto" -> contentHint 'detail' + 'maintain-resolution' (nítido)
         Por defecto: Película. Se puede cambiar mientras se comparte.
-[ ] 1.2 Guardián más listo: si la resolución enviada < 50 % de la capturada
+[x] 1.2 Guardián más listo: si la resolución enviada < 50 % de la capturada
         y limitedBy === 'none' (atorado sin razón) -> refreshAdaptation.
         Mantener el límite de 1 vez cada 15 s por espectador.
-[ ] 1.3 Preferir VP9 con transceiver.setCodecPreferences (si el navegador lo
+[x] 1.3 Preferir VP9 con transceiver.setCodecPreferences (si el navegador lo
         tiene; si no, queda VP8). Revisar que el celular lo reciba bien.
-[ ] 1.4 Captura: pedir frameRate { ideal: 30, max: 30 } y width/height ideal
+[x] 1.4 Captura: pedir frameRate { ideal: 30, max: 30 } y width/height ideal
         (no solo max) para que Chrome no capture chiquito.
-[ ] 1.5 Mostrar en el panel del anfitrión la resolución CAPTURADA (track.getSettings())
+[x] 1.5 Mostrar en el panel del anfitrión la resolución CAPTURADA (track.getSettings())
         para distinguir "captura chica" de "envío chico".
-[ ] Probar: PC + celular en el mismo Wi-Fi, vertical y horizontal.
-[ ] lint + typecheck + build. Commit por cada punto.
+[x] Probar: PC + celular en el mismo Wi-Fi, vertical y horizontal.
+[x] lint + typecheck + build. Commit por cada punto.
 
 FASE 2 - Servidor: módulo SFU (~2-3 h)
 --------------------------------------
 Archivos nuevos/cambiados: apps/server/src/sfu.ts (nuevo), socket.ts, rooms.ts,
 index.ts, packages/shared/src/index.ts, apps/server/.env.example
-[ ] 2.1 sfu.ts: funciones newSession, pushTracks, pullTracks, renegotiate,
+[x] 2.1 sfu.ts: funciones newSession, pushTracks, pullTracks, renegotiate,
         updateTracks, closeTracks. Usa fetch + App Secret. Revisar HTTP status,
         errorCode general y de cada track. sfuConfigured() como turnConfigured().
-[ ] 2.2 Eventos Socket.IO nuevos (con ack, tipados en shared):
+[x] 2.2 Eventos Socket.IO nuevos (con ack, tipados en shared):
         'sfu:publish'     anfitrión manda offer + lista {mid, trackName} -> answer
         'sfu:subscribe'   espectador pide los tracks del anfitrión -> offer del SFU
         'sfu:answer'      espectador manda su answer -> renegotiate
         'sfu:layer'       espectador pide capa f/h/q -> tracks/update
         'sfu:unpublish'   anfitrión deja de compartir -> tracks/close
       Servidor -> clientes: 'sfu:published' / 'sfu:unpublished'.
-[ ] 2.3 Seguridad: el servidor guarda qué sessionId es de qué socket; nadie puede
+[x] 2.3 Seguridad: el servidor guarda qué sessionId es de qué socket; nadie puede
         tocar la sesión de otro. Solo el anfitrión publica; solo invitados de la
         misma sala reciben. Límite de llamadas por socket (como el chat).
-[ ] 2.4 La sala guarda la publicación actual { sessionId, tracks } para quien
+[x] 2.4 La sala guarda la publicación actual { sessionId, tracks } para quien
         entre tarde. Se borra al dejar de compartir o si el anfitrión se va.
-[ ] 2.5 'webrtc:config' dice también si el SFU está disponible (sfu: true/false).
-[ ] 2.6 Al arrancar, el servidor imprime "SFU: configurado / no configurado".
+[x] 2.5 'webrtc:config' dice también si el SFU está disponible (sfu: true/false).
+[x] 2.6 Al arrancar, el servidor imprime "SFU: configurado / no configurado".
 
 FASE 3 - Anfitrión publica por el SFU con simulcast (~2 h)
 ----------------------------------------------------------
 Archivos: lib/sfu.ts (nuevo, en la web), HostPanel.tsx
-[ ] 3.1 Una sola RTCPeerConnection hacia Cloudflare (ya no una por espectador).
-[ ] 3.2 Video con 3 capas:
+[x] 3.1 Una sola RTCPeerConnection hacia Cloudflare (ya no una por espectador).
+[x] 3.2 Video con 3 capas:
           f: escala 1   (hasta 1080p/720p según calidad elegida) maxBitrate ~2.5-4 Mbps
           h: escala 2   ~900 kbps
           q: escala 4   ~250 kbps
         Audio: transceiver sendonly (Opus).
-[ ] 3.3 Esperar ICE, mandar offer por 'sfu:publish', aplicar answer.
-[ ] 3.4 Al dejar de compartir: 'sfu:unpublish' y cerrar la conexión.
-[ ] 3.5 PLAN B AUTOMÁTICO: si el SFU no está configurado o falla, usar la
+[x] 3.3 Esperar ICE, mandar offer por 'sfu:publish', aplicar answer.
+[x] 3.4 Al dejar de compartir: 'sfu:unpublish' y cerrar la conexión.
+[x] 3.5 PLAN B AUTOMÁTICO: si el SFU no está configurado o falla, usar la
         conexión directa actual (P2P) como hoy. Nunca quedarse sin video.
-[ ] 3.6 Mantener el selector de calidad (cambia maxBitrate de la capa f).
+[x] 3.6 Mantener el selector de calidad (cambia maxBitrate de la capa f).
 
 FASE 4 - Espectador recibe del SFU (~2 h)
 -----------------------------------------
 Archivos: lib/sfu.ts, GuestViewer.tsx
-[ ] 4.1 Al recibir 'sfu:published' (o al entrar si ya hay publicación):
+[x] 4.1 Al recibir 'sfu:published' (o al entrar si ya hay publicación):
         pc nueva -> 'sfu:subscribe' -> setRemote(offer) -> answer -> esperar ICE
         -> 'sfu:answer'. Unir audio y video en un MediaStream y ponerlo en <video>.
-[ ] 4.2 Casos: entrar tarde, anfitrión que deja y vuelve a compartir, reconexión,
+[x] 4.2 Casos: entrar tarde, anfitrión que deja y vuelve a compartir, reconexión,
         botón "Reintentar", 'sfu:unpublished' -> pantalla de espera.
-[ ] 4.3 Mantener todo lo del celular: activar sonido, pantalla completa, chat encima.
+[x] 4.3 Mantener todo lo del celular: activar sonido, pantalla completa, chat encima.
 
 FASE 5 - Calidad automática por espectador (~1-2 h)
 ---------------------------------------------------
-[ ] 5.1 Cada 3-4 s el espectador mide (getStats, inbound-rtp): pérdida de
+[x] 5.1 Cada 3-4 s el espectador mide (getStats, inbound-rtp): pérdida de
         paquetes, congelamientos (freezeCount), framesDropped, fps recibidos.
-[ ] 5.2 Si va mal 2 mediciones seguidas -> bajar capa (f->h->q) con 'sfu:layer'.
+[x] 5.2 Si va mal 2 mediciones seguidas -> bajar capa (f->h->q) con 'sfu:layer'.
         Si va bien ~20 s -> intentar subir. Evitar subir/bajar sin parar.
-[ ] 5.3 Selector manual para el espectador: Auto / Alta / Media / Baja.
-[ ] 5.4 Así el amigo de Argentina baja de capa SIN afectar a Fiamma.
+[x] 5.3 Selector manual para el espectador: Auto / Alta / Media / Baja.
+[x] 5.4 Así el amigo de Argentina baja de capa SIN afectar a Fiamma.
 
 FASE 6 - Panel del anfitrión y limpieza (~1 h)
 ----------------------------------------------
-[ ] 6.1 Mostrar el modo: "Vía Cloudflare (SFU)" o "Directo (P2P)".
-[ ] 6.2 Por espectador: capa que recibe (Alta/Media/Baja) y estado. El espectador
+[x] 6.1 Mostrar el modo: "Vía Cloudflare (SFU)" o "Directo (P2P)".
+[x] 6.2 Por espectador: capa que recibe (Alta/Media/Baja) y estado. El espectador
         manda sus datos al anfitrión por socket ('sfu:stats').
-[ ] 6.3 Cerrar tracks/sesiones al salir, al recargar y si se cae el anfitrión.
-[ ] 6.4 Actualizar README (cómo configurar el SFU) y .env.example.
+[x] 6.3 Cerrar tracks/sesiones al salir, al recargar y si se cae el anfitrión.
+[x] 6.4 Actualizar README (cómo configurar el SFU) y .env.example.
 
 FASE 7 - Pruebas y entrega
 --------------------------
 [ ] 7.1 Local: PC + celular mismo Wi-Fi (vertical y horizontal). Comparar con P2P.
 [ ] 7.2 Real: con el amigo en San Juan, Argentina (npm run share + túnel).
         Medir con chrome://webrtc-internals: resolución, fps, pérdida, capa.
-[ ] 7.3 Probar el plan B: quitar las claves del SFU -> debe funcionar en P2P.
-[ ] 7.4 npm run lint, npm run typecheck, npm run build sin errores.
+[x] 7.3 Probar el plan B: quitar las claves del SFU -> debe funcionar en P2P.
+[x] 7.4 npm run lint, npm run typecheck, npm run build sin errores.
 [ ] 7.5 Revisar uso en el panel de Cloudflare (GB gastados en la prueba).
 [ ] 7.6 Pull Request de mejoras/sfu-calidad -> produccion (cuando el usuario diga).
 
@@ -195,8 +196,30 @@ FASE 7 - Pruebas y entrega
   archivos que se toquen (HostPanel, GuestViewer), probando con 2 dispositivos.
 
 
-5. SIGUIENTE PASO AL VOLVER
+5. LO QUE SE HIZO (30/10/2026) - commits en mejoras/sfu-calidad
+----------------------------------------------------------------
+- Fase 0 (eabc26f): claves del SFU en .env (probadas: Cloudflare crea sesiones).
+- Fase 1 (19ed714): Contenido Película/Texto, guardián más listo, VP9 en P2P,
+  captura ideal 30 fps, panel con captura y códec.
+- Fase 2 (b837364): servidor sfu.ts + eventos sfu:* con seguridad y límites.
+  DESCUBRIMIENTO: con priorityOrdering 'asciibetical' Cloudflare se quedaba en 360p
+  aunque sobrara red -> se usa 'none' y la capa la elige el espectador (Fase 5).
+- Fases 3 y 4 (49b3a4b): anfitrión publica 3 capas VP8 por Cloudflare; espectador
+  recibe de ahí. Plan B automático a P2P (por espectador y si se cae el SFU).
+  EXTRA: audio Opus ESTÉREO a 128 kbps (antes mono ~32 kbps), comprobado.
+- Fase 5 (b9a01e8): calidad automática por espectador + selector Auto/Alta/Media/Baja.
+- Fase 6 (571a117 y siguiente): panel del anfitrión con lo que recibe cada espectador,
+  aviso "su internet pierde X %", arreglo de una carrera manual/Auto, README y pruebas.md.
+- Fase 7 (automática): plan B sin claves del SFU, modo compartir (npm run share) y
+  prueba general (e2e) con y sin SFU: TODO OK. Capturas de celular revisadas.
+- Pruebas automáticas en E:\DevTools\duo-pruebas: fase1.mjs, fase2.mjs, fase34.mjs,
+  fase5.mjs, estereo.mjs, autolayer.test.ts, celular-sfu.mjs, e2e.mjs.
+
+6. SIGUIENTE PASO AL VOLVER
 ---------------------------
-1) Usuario: FASE 0 (crear la app SFU en Cloudflare y poner las claves en .env).
-2) Yo: FASE 1 (se puede hacer aunque aún no estén las claves).
-3) Después FASES 2 a 7 en orden.
+1) Usuario: probar con el CELULAR de Fiamma en casa (docs/pruebas.md, sección 2b).
+2) Usuario: película real con el amigo de Argentina (npm run share). Mirar en el
+   panel del anfitrión su capa y si dice "su internet pierde X %". En su celular,
+   la consola anota cada cambio de calidad automática.
+3) Revisar en Cloudflare los GB usados después de la prueba.
+4) Si todo bien: Pull Request de mejoras/sfu-calidad -> produccion.

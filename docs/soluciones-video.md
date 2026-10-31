@@ -1,7 +1,8 @@
 SOLUCIONES PARA LA CALIDAD Y FLUIDEZ DEL VIDEO (Lazo)
 ==========================================================
 Fecha: 26/10/2026
-Estado: PENDIENTE. Solo se investigó; todavía NO se cambió nada del código.
+Estado: HECHO (30/10/2026). Se aplicaron el PASO 2 (mejoras rápidas) y el PASO 3 (SFU de
+Cloudflare). Detalle y commits en SFU.txt (raíz del proyecto).
 
 
 1. EL PROBLEMA
