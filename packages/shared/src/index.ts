@@ -77,6 +77,14 @@ export interface SfuPublishData {
   pubId: string; // id de esta publicación (cambia cada vez que el anfitrión vuelve a compartir)
   sdp: RTCSessionDescriptionInit; // respuesta del SFU para el anfitrión
 }
+/** Lo que un espectador recibe del SFU (se lo manda al anfitrión para su panel). */
+export interface SfuStats {
+  layer: SfuLayer; // capa que recibe
+  auto: boolean; // true si la calidad está en "Auto"
+  height: number | null; // alto en píxeles
+  fps: number;
+  lossPct: number; // % de paquetes perdidos en los últimos segundos
+}
 export interface SfuSubscribeData {
   pubId: string;
   sdp: RTCSessionDescriptionInit; // oferta del SFU para el espectador
@@ -122,6 +130,8 @@ export interface ClientToServerEvents {
   'sfu:answer': (p: { pubId: string; sdp: RTCSessionDescriptionInit }, ack: (r: Ack) => void) => void;
   // Cambia la capa que recibe (f = completa, h = mitad, q = cuarto)
   'sfu:layer': (p: { layer: SfuLayer }, ack: (r: Ack) => void) => void;
+  // Cómo le llega el video (cada pocos segundos): el servidor se lo pasa al anfitrión
+  'sfu:stats': (p: SfuStats) => void;
 }
 
 // Eventos que el SERVIDOR envía al cliente
@@ -138,4 +148,6 @@ export interface ServerToClientEvents {
   'sfu:published': (p: { pubId: string }) => void;
   // Esa publicación terminó
   'sfu:unpublished': (p: { pubId: string }) => void;
+  // (Solo al anfitrión) cómo le llega el video a un espectador por el SFU
+  'sfu:stats': (p: SfuStats & { fromId: string }) => void;
 }

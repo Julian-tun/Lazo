@@ -1,6 +1,6 @@
 # Checklist de pruebas manuales
 
-Antes de empezar: `npm run dev` en `E:\DuoProject` y deja la terminal abierta.
+Antes de empezar: `npm run dev` en `E:\Lazo` y deja la terminal abierta.
 
 > Ya se verificó automáticamente (con Chrome controlado por un script) que el invitado que entra tarde recibe
 > video y audio, que el chat funciona en los dos sentidos, la presencia, detener y reanudar, y los tres diseños
@@ -10,6 +10,7 @@ Antes de empezar: `npm run dev` en `E:\DuoProject` y deja la terminal abierta.
 ## 0. Preparación
 
 - [ ] La consola muestra `Servidor escuchando en http://localhost:3001`.
+- [ ] La consola muestra `SFU: configurado (Cloudflare)` (si pusiste las claves del SFU en `apps/server/.env`).
 - [ ] La consola muestra `https://192.168.x.x:5173   (Wi-Fi…)`. Anota esa dirección.
 - [ ] Si Windows pregunta por el firewall de Node.js: permitir en **redes privadas**.
 
@@ -37,6 +38,20 @@ Anfitrión: **Chrome**. Invitado: **Edge** (o una ventana de incógnito de Chrom
 - [ ] Pulsar **Dejar de compartir**: el invitado ve "Esperando a que el anfitrión comparta…".
 - [ ] Usar el botón "Dejar de compartir" de la **barra de Chrome**: el estado del anfitrión pasa a "Detenido".
 - [ ] Volver a compartir: el invitado vuelve a ver el video sin recargar.
+
+## 2b. Calidad y SFU (Cloudflare)
+
+- [ ] En el anfitrión: `Envío: vía Cloudflare (SFU)` y las capas `Alta 720p / Media 360p / Baja 180p`.
+- [ ] `Captura:` muestra el tamaño de la pestaña y ~30 fps. Si avisa "Chrome captura pocos cuadros": dejar la
+      pestaña compartida a la vista y la laptop conectada a la corriente.
+- [ ] Por espectador: `viendo ✓ · Cloudflare · Alta 720p 30fps`.
+- [ ] En el espectador, junto a ⛶, el selector dice `Auto · Alta 720p`. Elegir **Baja**: se ve más borroso en
+      ~1 s; elegir **Auto**: vuelve a Alta.
+- [ ] Cambiar **Contenido** a "Página / texto" con una página con letras: se leen nítidas.
+- [ ] Cambiar **Calidad** a "Alta (1080p)": el espectador recibe 1080p (si la red y la compu alcanzan).
+- [ ] Con audio estéreo (p. ej. un video de prueba izquierda/derecha) con audífonos: se oye cada lado por separado.
+- [ ] **Plan B:** quitar las claves del SFU del `.env` y reiniciar: el panel dice `directo a cada espectador
+      (P2P)` y todo sigue funcionando.
 
 ## 3. Invitado que entra tarde
 
@@ -81,7 +96,9 @@ Android (Chrome) y/o iPhone (Safari):
 
 - **El celular no abre la página:** que esté en el mismo Wi-Fi, usar la IP del adaptador Wi-Fi y revisar el
   firewall de Windows (Node.js en redes privadas).
-- **El invitado no ve video pero el chat sí funciona:** probablemente la red bloquea la conexión directa (falta TURN).
-  Pulsar "Reintentar". Probar con ambos en el mismo Wi-Fi.
+- **El invitado no ve video pero el chat sí funciona:** con SFU, revisar que la consola diga `SFU: configurado`.
+  Sin SFU, probablemente la red bloquea la conexión directa (falta TURN). Pulsar "Reintentar".
+- **Se ve borroso:** mirar en el panel del anfitrión si la `Captura` ya sale chica (problema de captura), si una
+  capa dice "limitado por tu subida" (internet del anfitrión) o si el espectador tiene "⚠ su internet pierde X %".
 - **No se oye:** volver a compartir y marcar "Compartir audio de la pestaña"; en el invitado pulsar "Activar sonido".
 - Abrir la consola del navegador (F12) y buscar mensajes `[host]` o `[guest]`.

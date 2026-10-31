@@ -1,6 +1,6 @@
 // Panel del ANFITRIÓN: abrir un link en otra pestaña y compartir esa pestaña con audio.
 import { useCallback, useEffect, useRef, useState } from 'react';
-import type { Participant } from '@lazo/shared';
+import type { Participant, SfuStats } from '@lazo/shared';
 import {
   getPublishStats,
   publishToSfu,
@@ -48,7 +48,7 @@ const PEER_LABEL: Record<RTCPeerConnectionState, string> = {
 type Mode = 'iniciando' | 'sfu' | 'p2p';
 
 // Nombre de cada capa del simulcast
-const LAYER_LABEL: Record<LayerStats['rid'], string> = { f: 'alta', h: 'media', q: 'baja' };
+const LAYER_LABEL: Record<LayerStats['rid'], string> = { f: 'Alta', h: 'Media', q: 'Baja' };
 
 /** Acepta "youtube.com/..." y le añade https:// si falta. Devuelve null si no es válido. */
 function normalizeUrl(raw: string): string | null {
@@ -106,6 +106,8 @@ export function HostPanel({ guests, fiesta, onFiesta }: Props) {
   const sfuRef = useRef<SfuPublisher | null>(null);
   // Lo que se envía al SFU: cada capa y la velocidad total
   const [sfuInfo, setSfuInfo] = useState<{ layers: LayerStats[]; kbps: number | null } | null>(null);
+  // Lo que cada espectador dice que recibe por el SFU (clave = id del espectador)
+  const [guestStats, setGuestStats] = useState<Record<string, SfuStats & { at: number }>>({});
   // Último conteo de bytes enviados, para calcular la velocidad (kbps)
   const lastBytesRef = useRef(new Map<string, { bytes: number; at: number }>());
   // Última vez que el "guardián" reinició la calidad de cada espectador
@@ -217,13 +219,19 @@ export function HostPanel({ guests, fiesta, onFiesta }: Props) {
       void startCall(fromId);
     };
 
+    // Un espectador cuenta cómo le llega el video por el SFU
+    const onStats = ({ fromId, ...st }: SfuStats & { fromId: string }) =>
+      setGuestStats((prev) => ({ ...prev, [fromId]: { ...st, at: Date.now() } }));
+
     socket.on('webrtc:answer', onAnswer);
     socket.on('webrtc:ice', onIce);
     socket.on('webrtc:request', onRequest);
+    socket.on('sfu:stats', onStats);
     return () => {
       socket.off('webrtc:answer', onAnswer);
       socket.off('webrtc:ice', onIce);
       socket.off('webrtc:request', onRequest);
+      socket.off('sfu:stats', onStats);
     };
   }, [startCall]);
 
@@ -374,6 +382,12 @@ export function HostPanel({ guests, fiesta, onFiesta }: Props) {
       setRoutes(nextRoutes);
       setSendInfo(nextInfo);
       setCapture(nextCapture);
+      // Olvidar datos de espectadores que dejaron de mandarlos (más de 12 s)
+      setGuestStats((prev) => {
+        const now = Date.now();
+        const next = Object.fromEntries(Object.entries(prev).filter(([, v]) => now - v.at < 12_000));
+        return Object.keys(next).length === Object.keys(prev).length ? prev : next;
+      });
     }, 4000);
     return () => clearInterval(timer);
   }, []);
@@ -584,6 +598,7 @@ export function HostPanel({ guests, fiesta, onFiesta }: Props) {
                 const state = peerStates[g.id];
                 const route = state === 'connected' ? routes[g.id] : undefined;
                 const info = state === 'connected' ? sendInfo[g.id] : undefined;
+                const gs = guestStats[g.id];
                 return (
                   <li key={g.id}>
                     {g.name}:{' '}
@@ -593,8 +608,26 @@ export function HostPanel({ guests, fiesta, onFiesta }: Props) {
                       }
                     >
                       {state ? PEER_LABEL[state] : mode === 'sfu' ? '' : 'esperando…'}
-                      {!state && mode === 'sfu' && <span className="text-sky-300">recibe de Cloudflare</span>}
                     </span>
+                    {/* Por Cloudflare: lo que el espectador dice que recibe (capa, alto, fps y pérdidas) */}
+                    {!state &&
+                      mode === 'sfu' &&
+                      (gs ? (
+                        <>
+                          <span className="text-emerald-400">viendo ✓</span>
+                          <span className="text-sky-300"> · Cloudflare</span>
+                          <span className="text-zinc-500">
+                            {` · ${LAYER_LABEL[gs.layer]}${gs.auto ? '' : ' (fija)'}`}
+                            {gs.height ? ` ${gs.height}p` : ''}
+                            {` ${gs.fps}fps`}
+                          </span>
+                          {gs.lossPct >= 3 && (
+                            <span className="text-amber-300"> · ⚠ su internet pierde {gs.lossPct}%</span>
+                          )}
+                        </>
+                      ) : (
+                        <span className="text-sky-300">conectando por Cloudflare…</span>
+                      ))}
                     {route && (
                       <span className={route === 'relay' ? 'text-sky-300' : 'text-zinc-500'}>
                         {route === 'relay' ? ' · por TURN (respaldo)' : ' · directo'}

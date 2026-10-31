@@ -94,6 +94,7 @@ export function registerSocketHandlers(io: IO) {
     let chatTimes: number[] = [];
     let sfuTimes: number[] = [];
     let sfuBusy = false; // una operación de publicar/recibir a la vez por persona
+    let lastStatsAt = 0; // para no reenviar estadísticas más de una vez cada 1.5 s
 
     /** ¿Puede hacer otra operación del SFU? (límite de frecuencia) */
     const sfuAllowed = () => {
@@ -228,6 +229,8 @@ export function registerSocketHandlers(io: IO) {
       // Con p2p = true (el SFU le falló a este invitado) se pide la conexión directa al anfitrión.
       const pub = currentRoom.publication;
       if (pub?.live && p?.p2p !== true) return void socket.emit('sfu:published', { pubId: pub.id });
+      // Pasa a conexión directa: lo que recibía del SFU ya no sirve
+      if (p?.p2p === true) closeSubscription(currentRoom, socket.id);
       io.to(host).emit('webrtc:request', { fromId: socket.id, p2p: p?.p2p === true });
     });
     socket.on('webrtc:config', (ack) => {
@@ -373,6 +376,34 @@ export function registerSocketHandlers(io: IO) {
         closeSubscription(room, socket.id);
         ack({ ok: false, error: 'No se pudo conectar con el SFU' });
       }
+    });
+
+    // INVITADO: cómo le llega el video por el SFU -> se lo pasamos SOLO al anfitrión de su sala
+    socket.on('sfu:stats', (p) => {
+      const host = hostId();
+      const now = Date.now();
+      if (me?.role !== 'guest' || !host || !currentRoom?.subscriptions.has(socket.id)) return;
+      if (now - lastStatsAt < 1500) return;
+      const num = (x: unknown, max: number) =>
+        typeof x === 'number' && Number.isFinite(x) && x >= 0 && x <= max;
+      if (
+        !validLayer(p?.layer) ||
+        typeof p.auto !== 'boolean' ||
+        !(p.height === null || num(p.height, 10_000)) ||
+        !num(p.fps, 240) ||
+        !num(p.lossPct, 100)
+      ) {
+        return;
+      }
+      lastStatsAt = now;
+      io.to(host).emit('sfu:stats', {
+        fromId: socket.id,
+        layer: p.layer,
+        auto: p.auto,
+        height: p.height === null ? null : Math.round(p.height),
+        fps: Math.round(p.fps),
+        lossPct: Math.round(p.lossPct * 10) / 10,
+      });
     });
 
     // INVITADO: cambia la capa de video que recibe (f / h / q)

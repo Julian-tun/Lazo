@@ -4,7 +4,9 @@ App web privada para ver juntos una página web: **hasta 4 personas** (1 compart
 
 - El **anfitrión** crea una sala, abre un link en otra pestaña y comparte **solo esa pestaña** (con su audio).
 - Los **espectadores** (hasta 3) entran con el código de sala y ven la transmisión en vivo, con chat, desde el celular o la PC.
-- El video va **P2P por WebRTC** (directo entre los dos navegadores). El servidor solo maneja salas, chat y señalización.
+- El video va por el **SFU de Cloudflare** (el anfitrión lo sube una vez y Cloudflare lo reparte a cada
+  espectador). Si el SFU no está configurado o falla, va **P2P por WebRTC** (directo entre navegadores).
+  El servidor maneja salas, chat y señalización; nunca ve el video.
 - No se descarga ni se procesa el contenido de la página: solo se transmite la pestaña que el anfitrión elige.
 
 > Estado: **esqueleto para pruebas locales.** Sin cuentas, sin base de datos, sin hosting.
@@ -18,8 +20,8 @@ App web privada para ver juntos una página web: **hasta 4 personas** (1 compart
 ## Arrancar
 
 ```powershell
-cd E:\DuoProject
-npm install        # solo la primera vez
+cd E:\Lazo
+npm install        # solo la primera vez (y si mueves o renombras la carpeta)
 npm run dev        # levanta servidor + web a la vez
 ```
 
@@ -50,14 +52,15 @@ Para detenerlo: `Ctrl + C` en la terminal.
 ## Estructura
 
 ```
-Lazo/  (carpeta E:\DuoProject)
+Lazo/  (carpeta E:\Lazo)
 ├─ package.json              workspaces y scripts generales
 ├─ apps/
 │  ├─ server/                Node + Express + Socket.IO (ejecutado con tsx)
 │  │  └─ src/
 │  │     ├─ index.ts         arranque del servidor HTTP y Socket.IO
 │  │     ├─ rooms.ts         salas en memoria (Map), máx. 4 personas
-│  │     ├─ socket.ts        eventos: salas, chat, señalización WebRTC
+│  │     ├─ socket.ts        eventos: salas, chat, señalización WebRTC y SFU
+│  │     ├─ sfu.ts           API del SFU de Cloudflare (sesiones, publicar, recibir, capas)
 │  │     └─ turn.ts          credenciales temporales del TURN de Cloudflare
 │  └─ web/                   Vite + React + TypeScript + Tailwind CSS v4
 │     ├─ vite.config.ts      HTTPS local, --host, proxy de /socket.io
@@ -72,7 +75,9 @@ Lazo/  (carpeta E:\DuoProject)
 │        │  └─ viewer/       GuestViewer (invitado: ver el stream)
 │        ├─ lib/
 │        │  ├─ socket.ts     conexión única de Socket.IO + estado de conexión
-│        │  └─ webrtc.ts     RTCPeerConnection, STUN y TURN
+│        │  ├─ webrtc.ts     RTCPeerConnection (P2P), STUN/TURN, calidad, audio estéreo
+│        │  ├─ sfu.ts        publicar y recibir por el SFU (3 capas / simulcast)
+│        │  └─ sfuQuality.ts calidad automática del espectador (elige la capa)
 │        ├─ App.tsx, main.tsx, index.css
 ├─ packages/shared/          tipos de eventos y límites compartidos (server + web)
 ├─ scripts/tunnel.mjs        túnel para compartir la app fuera de tu Wi-Fi (npm run share)
@@ -85,10 +90,26 @@ Lazo/  (carpeta E:\DuoProject)
 
 1. Home → `room:create` o `room:join` (con ack). El servidor responde con la sala, quién está y el historial del chat.
 2. El invitado, cuando su visor está listo, envía `webrtc:request`.
-3. Si el anfitrión está compartiendo, crea una `RTCPeerConnection` **para ese invitado** (una por espectador) y le envía `webrtc:offer` (con `to`). El invitado responde con `webrtc:answer`.
-   Ambos intercambian candidatos `webrtc:ice`. El servidor solo **reenvía** estos mensajes: del anfitrión a un invitado concreto, o de un invitado al anfitrión.
-4. Cada intento de conexión lleva un `callId`, para ignorar mensajes de intentos anteriores.
-5. Al dejar de compartir, el anfitrión envía `webrtc:stop`.
+
+**Con SFU (si está configurado):**
+
+3. El anfitrión abre UNA `RTCPeerConnection` con Cloudflare y publica (`sfu:publish`): video en 3 capas
+   (simulcast: alta, media y baja) y audio. Cuando conecta, avisa `sfu:live` y el servidor manda
+   `sfu:published` a los invitados (y a quien entre tarde, como respuesta a `webrtc:request`).
+4. Cada invitado abre su propia conexión con Cloudflare: `sfu:subscribe` (recibe la oferta del SFU) y
+   `sfu:answer` (su respuesta). Con `sfu:layer` cambia de capa sin reconectar.
+5. El servidor guarda qué sesión del SFU es de quién: nadie puede tocar la sesión de otro. El App Secret
+   de Cloudflare nunca sale del servidor.
+
+**Sin SFU, o si el SFU falla (plan B, P2P):**
+
+3. El anfitrión crea una `RTCPeerConnection` **para cada invitado** y le envía `webrtc:offer` (con `to`).
+   El invitado responde con `webrtc:answer`. Ambos intercambian candidatos `webrtc:ice`; el servidor solo los
+   **reenvía**. Cada intento lleva un `callId` para ignorar mensajes de intentos anteriores.
+4. Si el SFU se cae a mitad de la película, el anfitrión pasa solo a P2P con todos. Si solo le falla a un
+   invitado, ese invitado pide `webrtc:request` con `p2p: true` y recibe directo; los demás siguen por el SFU.
+
+Al dejar de compartir, el anfitrión envía `webrtc:stop` (el servidor cierra también lo del SFU).
 
 Eventos y tipos: [packages/shared/src/index.ts](packages/shared/src/index.ts).
 
@@ -140,15 +161,46 @@ el script también lo busca donde lo instala winget y en el PATH. Puede funciona
 
 ## Calidad del video
 
-- Cada espectador tiene su propia conexión: WebRTC ajusta la calidad **solo para él** según su internet.
-  Si uno tiene mala conexión, a los demás no les afecta.
-- El anfitrión elige el **tope** con el selector "Calidad": Ahorro (480p, 0.8 Mbps), Normal (720p, 2.5 Mbps)
-  o Alta (1080p, 5 Mbps). Por defecto: Normal.
-- En el panel se ve, por espectador, la calidad real que recibe (p. ej. `720p 30fps 1.8 Mbps`) y, si está
-  limitada, por qué: `⚠ limitado por tu compu` o `⚠ limitado por la red`.
-- **Guardián automático:** Chrome empieza enviando el video muy pequeño (no sabe aún cuánta red hay) y a veces
-  se queda atascado ahí. Cada 4 s, si un espectador está "limitado por la red" pero sobra red, se reinicia el
-  ajuste (como mucho una vez cada 15 s). Si la red de verdad es mala, no hace nada.
+**Anfitrión:**
+- **Calidad** (tope): Ahorro (480p, 0.8 Mbps), Normal (720p, 2.5 Mbps) o Alta (1080p, 5 Mbps). Por defecto: Normal.
+- **Contenido:** "Película / video" cuida la **fluidez** (30 fps; si falta red baja un poco la nitidez) y
+  "Página / texto" cuida la **nitidez** (letras legibles; si falta red baja los fps). Se puede cambiar en vivo.
+- El panel muestra la **captura** (lo que Chrome toma de la pestaña, p. ej. `1280x720 30fps`; si salen pocos
+  cuadros, avisa), el **modo de envío** (Cloudflare o P2P) y, con SFU, las 3 capas y la velocidad de subida.
+- Por espectador: con SFU, la capa que recibe (`Alta 720p 30fps`) y si su internet pierde datos; en P2P, la
+  calidad que se le envía, la ruta (directo o TURN), el códec y si está limitada por la compu o la red.
+- **Guardián automático:** Chrome empieza enviando el video pequeño y a veces se queda atascado ahí. Cada 4 s,
+  si sobra red o si envía menos de la mitad de lo que captura sin ningún motivo, se reinicia el ajuste
+  (como mucho una vez cada 15 s).
+
+**Con SFU (Cloudflare):**
+- El anfitrión sube el video **una sola vez** en 3 capas (VP8): Alta (tamaño completo), Media (mitad) y Baja
+  (un cuarto). Su subida ya no se multiplica por el número de espectadores.
+- Cada espectador mide cada 2 s cómo le llega el video (pérdidas, retraso, congelamientos) y **baja o sube de
+  capa solo** (`Auto`). Si uno tiene mal internet, a los demás no les afecta. También puede fijar la calidad
+  con el selector junto al botón de pantalla completa: Auto / Alta / Media / Baja.
+
+**En P2P:** cada espectador tiene su propia conexión y WebRTC ajusta la calidad solo para él. Se prefiere
+**VP9** (más nítido con la misma red); si el navegador del espectador no lo tiene, se usa VP8.
+
+**Audio:** Opus en **estéreo** a 128 kbps (por defecto Chrome manda mono a ~32 kbps).
+
+## SFU de Cloudflare (recomendado)
+
+Con el SFU el video va **desde un servidor de Cloudflare cercano a cada espectador** (también en
+Sudamérica) en vez de directo desde tu PC: más fluido entre países y con una sola subida para todos.
+
+1. En el panel de Cloudflare, **Realtime → SFU → Create application**. Te da un **App ID** y un **App Secret**.
+2. Ponlos en `apps/server/.env` (copia `apps/server/.env.example` si aún no lo tienes):
+   `CLOUDFLARE_SFU_APP_ID=...` y `CLOUDFLARE_SFU_APP_SECRET=...`
+3. Reinicia `npm run dev`. La consola dirá `SFU: configurado (Cloudflare)`.
+
+En el panel del anfitrión verás `Envío: vía Cloudflare (SFU)`. Sin las claves, o si Cloudflare falla, la
+app usa conexión directa (P2P) como siempre: nunca se queda sin video.
+
+- **Costo:** SFU y TURN comparten **1000 GB gratis al mes** (lo que Cloudflare envía); después, $0.05 USD por GB.
+  Una película de 2 h con 2 espectadores en Normal son unos 4–5 GB. Conviene poner una alerta de uso en Cloudflare.
+- El App Secret **nunca** llega al navegador ni se sube a git (`.env` está en `.gitignore`).
 
 ## Respaldo TURN (opcional)
 
@@ -180,10 +232,11 @@ En el panel del anfitrión verás `Respaldo TURN: listo ✓` y, por cada especta
   Firefox y Safari no comparten audio de pestaña.
 - **iPhone y pantalla completa:** Safari en iPhone usa su propio reproductor a pantalla completa y no deja
   mostrar nada encima, así que ahí no salen los avisos de mensajes. En horizontal sin pantalla completa sí salen.
-- **Subida del anfitrión:** el anfitrión envía una copia del video a cada espectador. Con 3 espectadores
-  necesita unos 6–8 Mbps de **subida** para buena calidad; si no alcanza, WebRTC baja la calidad solo.
-  Para más de 3 espectadores convendría un servidor intermedio (SFU) que reciba una copia y la reparta.
-- **Calidad:** WebRTC ajusta la resolución según la red; al principio puede verse borroso y mejora en segundos.
+- **Subida del anfitrión:** con SFU sube una sola vez (unos 3.5 Mbps en Normal, 7 Mbps en Alta, por las 3
+  capas). Sin SFU (P2P) envía una copia a cada espectador: con 3 espectadores necesita unos 6–8 Mbps de subida.
+- **Calidad:** al principio puede verse borroso unos segundos mientras WebRTC calcula cuánta red hay.
+- **Captura de la pestaña:** si la pestaña compartida queda en segundo plano o la laptop está en ahorro de
+  energía, Chrome puede capturar pocos cuadros (el panel lo avisa). Mejor dejarla a la vista y conectada.
 - **Certificado autofirmado:** hay que aceptar la advertencia en cada dispositivo.
 
 ## Siguientes pasos
@@ -193,7 +246,6 @@ En el panel del anfitrión verás `Respaldo TURN: listo ✓` y, por cada especta
 3. **Chat flotante para el anfitrión:** el anfitrión está en la otra pestaña viendo el contenido. Opciones:
    Document Picture-in-Picture (Chrome) con el chat, o una extensión del navegador.
 4. Reconexión más tolerante (mantener la sala unos segundos si el anfitrión se desconecta).
-5. Control de calidad (resolución/fps) y estadísticas de conexión.
 
 ## Licencia
 

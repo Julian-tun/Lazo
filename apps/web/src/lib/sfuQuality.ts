@@ -124,10 +124,12 @@ export class AutoLayer {
     return null;
   }
 
-  /** El servidor no aceptó el cambio: volvemos a la capa anterior. */
-  revert(layer: SfuLayer, now: number): void {
-    this.layer = layer;
-    this.lastChangeAt = now;
+  /**
+   * Pone la capa que de verdad se está recibiendo (p. ej. el servidor no aceptó el cambio, o el
+   * espectador la eligió a mano) y empieza a juzgar de cero desde ahí.
+   */
+  sync(layer: SfuLayer, now: number): void {
+    this.change(layer, now);
   }
 
   private change(to: SfuLayer, now: number): SfuLayer {

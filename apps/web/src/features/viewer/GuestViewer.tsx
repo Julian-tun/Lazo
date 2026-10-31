@@ -233,6 +233,7 @@ export function GuestViewer({ meId, hostId, overlay }: Props) {
     const auto = new AutoLayer(layerRef.current, Date.now());
     let prev: RecvSample | null = null;
     let busy = false;
+    let tick = 0;
     const timer = setInterval(async () => {
       const sub = sfuRef.current;
       if (!sub || busy) return;
@@ -244,15 +245,33 @@ export function GuestViewer({ meId, hostId, overlay }: Props) {
         prev = cur;
         if (!j) return;
         setRecv({ height: cur.height, fps: Math.round(j.fps) });
-        // Calidad elegida a mano: el automático solo se mantiene al día
-        if (choiceRef.current !== 'auto') return auto.revert(layerRef.current, Date.now());
+        // Cada ~4 s le contamos al anfitrión cómo nos llega (para su panel)
+        if (tick++ % 2 === 0) {
+          socket.emit('sfu:stats', {
+            layer: layerRef.current,
+            auto: choiceRef.current === 'auto',
+            height: cur.height,
+            fps: j.fps,
+            lossPct: j.lossRate * 100,
+          });
+        }
+        // El automático debe partir de la capa que de verdad se recibe (p. ej. si se eligió a mano)
+        if (auto.layer !== layerRef.current) auto.sync(layerRef.current, Date.now());
+        // Calidad elegida a mano: el automático no decide nada
+        if (choiceRef.current !== 'auto') return;
         const next = auto.next(j, Date.now());
         if (!next) return;
         const before = layerRef.current;
+        // Queda en la consola (F12) por qué cambió: útil para revisar una película con problemas
+        console.info(
+          `[guest] calidad automática: ${LAYER_LABEL[before]} -> ${LAYER_LABEL[next]}`,
+          `(pérdida ${(j.lossRate * 100).toFixed(1)} %, espera ${Math.round(j.delayMs ?? 0)} ms,` +
+            ` congelado ${j.froze ? 'sí' : 'no'}, ${Math.round(j.fps)} fps)`,
+        );
         if (await askLayer(next)) {
           layerRef.current = next;
           setLayer(next);
-        } else auto.revert(before, Date.now());
+        } else auto.sync(before, Date.now()); // el servidor no aceptó el cambio
       } finally {
         busy = false;
       }
