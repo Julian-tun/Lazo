@@ -8,6 +8,7 @@ import { ACK_TIMEOUT_MS, socket } from './socket';
 const FALLBACK: IceConfig = {
   iceServers: [{ urls: 'stun:stun.l.google.com:19302' }],
   turn: false,
+  sfu: false,
 };
 
 let cached: { config: IceConfig; at: number } | null = null;

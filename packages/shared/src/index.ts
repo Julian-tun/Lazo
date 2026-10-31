@@ -60,6 +60,27 @@ export interface SignalIce {
 export interface IceConfig {
   iceServers: RTCIceServer[];
   turn: boolean; // true si hay respaldo TURN disponible
+  sfu: boolean; // true si el SFU de Cloudflare está configurado en el servidor
+}
+
+// ---- SFU de Cloudflare ----
+// El anfitrión sube el video UNA vez a Cloudflare y Cloudflare lo reparte a cada espectador.
+// El video va en 3 capas (simulcast): f = completa, h = mitad, q = cuarto.
+export type SfuLayer = 'f' | 'h' | 'q';
+export const SFU_LAYERS: SfuLayer[] = ['f', 'h', 'q'];
+
+export interface SfuTrack {
+  mid: string; // id del "transceiver" en la conexión del navegador
+  kind: 'audio' | 'video';
+}
+export interface SfuPublishData {
+  pubId: string; // id de esta publicación (cambia cada vez que el anfitrión vuelve a compartir)
+  sdp: RTCSessionDescriptionInit; // respuesta del SFU para el anfitrión
+}
+export interface SfuSubscribeData {
+  pubId: string;
+  sdp: RTCSessionDescriptionInit; // oferta del SFU para el espectador
+  tracks: SfuTrack[]; // qué mid es el audio y cuál el video en la conexión del espectador
 }
 
 // ---- Eventos ----
@@ -75,12 +96,32 @@ export interface ClientToServerEvents {
   'webrtc:answer': (p: SignalAnswer) => void;
   // "to" es obligatorio si lo envía el anfitrión; el invitado no lo necesita.
   'webrtc:ice': (p: SignalIce & { to?: string }) => void;
-  // El invitado pide al anfitrión que (re)inicie la conexión de video
-  'webrtc:request': () => void;
+  // El invitado pide el video. Si el anfitrión publica por el SFU, el servidor le contesta
+  // con 'sfu:published'; si no (o si p2p = true), se le pasa al anfitrión para conexión directa.
+  'webrtc:request': (p?: { p2p?: boolean }) => void;
   // El anfitrión avisa que dejó de compartir
   'webrtc:stop': () => void;
   // Pedir los servidores STUN/TURN (solo para quien está en una sala)
   'webrtc:config': (ack: (r: Ack<IceConfig>) => void) => void;
+
+  // ---- SFU (anfitrión) ----
+  // Publica sus pistas: manda su oferta y recibe la respuesta del SFU
+  'sfu:publish': (
+    p: { sdp: RTCSessionDescriptionInit; tracks: SfuTrack[] },
+    ack: (r: Ack<SfuPublishData>) => void,
+  ) => void;
+  // Su conexión con el SFU ya está "connected": se avisa a los espectadores
+  'sfu:live': (p: { pubId: string }) => void;
+  // Dejó de publicar por el SFU (dejó de compartir o pasó a conexión directa)
+  'sfu:unpublish': () => void;
+
+  // ---- SFU (espectador) ----
+  // Pide recibir la publicación actual en la capa "layer": recibe la oferta del SFU
+  'sfu:subscribe': (p: { layer: SfuLayer }, ack: (r: Ack<SfuSubscribeData>) => void) => void;
+  // Manda su respuesta a esa oferta
+  'sfu:answer': (p: { pubId: string; sdp: RTCSessionDescriptionInit }, ack: (r: Ack) => void) => void;
+  // Cambia la capa que recibe (f = completa, h = mitad, q = cuarto)
+  'sfu:layer': (p: { layer: SfuLayer }, ack: (r: Ack) => void) => void;
 }
 
 // Eventos que el SERVIDOR envía al cliente
@@ -92,4 +133,8 @@ export interface ServerToClientEvents {
   'webrtc:ice': (p: SignalIce & { fromId: string }) => void;
   'webrtc:request': (p: { fromId: string }) => void;
   'webrtc:stop': (p: { fromId: string }) => void;
+  // Hay una publicación del anfitrión en el SFU lista para recibir
+  'sfu:published': (p: { pubId: string }) => void;
+  // Esa publicación terminó
+  'sfu:unpublished': (p: { pubId: string }) => void;
 }

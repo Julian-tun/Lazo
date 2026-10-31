@@ -27,7 +27,8 @@ function withoutPort53(server: RTCIceServer): RTCIceServer {
   return { ...server, urls };
 }
 
-export async function getIceConfig(): Promise<IceConfig> {
+/** Servidores ICE (el campo "sfu" lo agrega socket.ts). */
+export async function getIceConfig(): Promise<Omit<IceConfig, 'sfu'>> {
   if (!turnConfigured()) return { iceServers: [STUN], turn: false };
   if (cache && Date.now() < cache.expiresAt) return { iceServers: cache.servers, turn: true };
 

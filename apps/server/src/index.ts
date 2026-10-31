@@ -13,6 +13,7 @@ import { Server } from 'socket.io';
 import type { ClientToServerEvents, ServerToClientEvents } from '@lazo/shared';
 import { registerSocketHandlers } from './socket.js';
 import { roomCount } from './rooms.js';
+import { sfuConfigured } from './sfu.js';
 import { turnConfigured } from './turn.js';
 
 // Carga apps/server/.env si existe (ahí van las claves, que nunca se suben a git)
@@ -84,5 +85,10 @@ httpServer.listen(PORT, () => {
     turnConfigured()
       ? 'Respaldo TURN: configurado (Cloudflare)'
       : 'Respaldo TURN: no configurado (solo conexión directa). Ver apps/server/.env.example',
+  );
+  console.log(
+    sfuConfigured()
+      ? 'SFU: configurado (Cloudflare). El video se reparte desde Cloudflare.'
+      : 'SFU: no configurado (video por conexión directa). Ver apps/server/.env.example',
   );
 });
